@@ -1,0 +1,262 @@
+/* 🖊 ORBITABS MARKUP — overlay + chip styles (content-script world)
+   Everything Orbitabs adds is position:fixed, topmost, and fully removable —
+   the website's own content is never modified. */
+
+/* ── in-page overlay (markup-overlay.js build()) ── */
+#orbitabs-markup-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+}
+
+#mk-canvas {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+#mk-canvas.mk-erasing {
+  cursor: cell;
+}
+
+#mk-toolbar {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: #0f172a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  /* narrow windows/pages: wrap to a second row instead of clipping the
+     swatches off-screen (10 colors + 12 buttons ≈ 620px natural width) */
+  max-width: calc(100vw - 28px);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 6px;
+}
+
+#mk-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  padding: 0;
+}
+
+#mk-toolbar button svg {
+  width: 16px;
+  height: 16px;
+}
+
+#mk-toolbar button.mk-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+#mk-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#mk-toolbar button.mk-active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.mk-swatches {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+  margin-right: 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ink (TEXT color) row — second swatch group with a divider after it */
+.mk-ink-swatches {
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* text-SIZE row (S / M / L) — third group, segmented text buttons */
+.mk-size-swatches {
+  gap: 2px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.mk-size-btn {
+  font: 600 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #e2e8f0;
+  border-radius: 6px !important;
+}
+
+.mk-size-btn[data-size='S'] { font-size: 9px; }
+.mk-size-btn[data-size='L'] { font-size: 12px; }
+
+.mk-size-btn:hover { background: rgba(255, 255, 255, 0.14); }
+.mk-size-btn.mk-active { background: rgba(255, 255, 255, 0.22); }
+
+.mk-ink-swatches .mk-swatch {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.mk-ink-swatches .mk-swatch.mk-ink-auto {
+  font: 700 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.mk-ink-swatches .mk-swatch.mk-ink-auto.mk-active {
+  border-color: #fff !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+.mk-swatch {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  border: 2px solid transparent !important;
+  padding: 0 !important;
+}
+
+.mk-swatch.mk-active {
+  border-color: #fff !important;
+  background-clip: padding-box;
+}
+
+.mk-swatch:hover {
+  border-color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* 🎨 any-color escape hatch — palette icon on a subdued chip */
+.mk-swatch.mk-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8;
+}
+
+.mk-swatch.mk-custom:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+.mk-status {
+  min-width: 52px;
+  text-align: center;
+  color: #4ade80;
+  font: 600 11px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+#mk-hint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #cbd5e1;
+  font: 500 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  pointer-events: none;
+}
+
+#mk-toast {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: #2563eb;
+  color: #fff;
+  font: 600 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+#mk-text-input {
+  position: absolute;
+  min-width: 200px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  color: #f8fafc;
+  font: 500 14px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  resize: none;
+  outline: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+/* ── sticky shape picker (visible while a sticky note is selected) ── */
+#mk-shape-picker {
+  position: fixed;
+  top: 56px;
+  right: 14px;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: #0f172a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  color: #94a3b8;
+  font: 600 11px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+#mk-shape-picker.mk-visible {
+  display: flex;
+}
+
+#mk-shape-picker button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  padding: 0;
+}
+
+#mk-shape-picker button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#mk-shape-picker button.mk-active {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* ── launcher chip (worker/popup-triggered path) ── */
+#orbitabs-markup-chip {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 9999px;
+  background: #2563eb;
+  color: #fff;
+  font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+}

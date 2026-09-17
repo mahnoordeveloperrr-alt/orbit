@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Orbitabs",
+  "version": "1.4.3",
+  "description": "Save and restore your browser sessions instantly.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["tabs", "storage", "tabGroups", "alarms", "scripting", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "http://localhost:5000/*",
+    "http://127.0.0.1:5000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["markup-core.js", "markup-overlay.js"],
+      "css": ["markup-overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Orbitabs",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "commands": {
+    "quick-save": {
+      "suggested_key": { "default": "Alt+Shift+S" },
+      "description": "Quick Save — snapshot all windows as a named session"
+    },
+    "restore-last": {
+      "suggested_key": { "default": "Alt+Shift+R" },
+      "description": "Restore — reopen your most recent saved session"
+    },
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+O" },
+      "description": "Open Orbitabs"
+    }
+  }
+}
