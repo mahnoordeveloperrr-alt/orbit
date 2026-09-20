@@ -21,7 +21,7 @@ const html = `<!doctype html>
   .article { max-width: 640px; margin: 24px auto; }
   h1 { font-size: 22px; }
   .para { color: #334; }
-  .banner { background:#dbeafe; color:#1e3a5f; padding:8px 14px; border-radius:8px; max-width:640px; margin:16px auto; font:600 13px system-ui; }
+  .banner { background:#ede9fe; color:#4c1d95; padding:8px 14px; border-radius:8px; max-width:640px; margin:16px auto; font:600 13px system-ui; }
 </style>
 <style id="orbi-css-inject">${dist('markup-overlay.css')}</style>
 <script>

@@ -26,7 +26,7 @@ const normalizeUrl = (url) => {
   return HAS_SCHEME.test(url) ? url : 'https://' + url;
 };
 
-export default function SessionList({ sessions, selectedIds, onToggleSelect, onDelete, onRenamed, onRestoreResult }) {
+export default function SessionList({ sessions, onDelete, onRenamed, onRestoreResult }) {
   const [expandedId, setExpandedId] = useState(null);
   // 🆕 inline rename — click a session's name or ⋯ → Rename (AUTO card is not renamable)
   const [editingId, setEditingId] = useState(null);
@@ -181,10 +181,6 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
     } catch (err) { console.error('Empty trash failed:', err); }
   };
 
-  // 🆕 Select All Logic
-  const allIds = sessions.map(sid);
-  const isAllSelected = allIds.length > 0 && allIds.every(id => selectedIds.includes(id));
-
   // 🗑️ TRASH VIEW
   if (showTrash) {
     return (
@@ -235,7 +231,7 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleTrashRestore(uid)}
-                      className="flex items-center gap-1 text-accent hover:text-indigo-700 text-sm font-medium px-2"
+                      className="flex items-center gap-1 text-accent hover:text-violet-700 text-sm font-medium px-2"
                     >
                       <RotateCcw size={14} /> Restore
                     </button>
@@ -257,34 +253,16 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
 
   return (
     <div className="space-y-2 mt-2">
-      {/* Select-all header + trash entry */}
+      {/* Header: trash entry (soft-deleted sessions, restorable) */}
       {sessions.length > 0 && (
-        <div className="flex items-center justify-between px-2 py-1.5 text-xs text-textMuted border-b border-borderLight/50">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isAllSelected}
-              onChange={() => {
-                setExpandedId(null);
-                allIds.forEach(id => {
-                  if (isAllSelected) {
-                    if (selectedIds.includes(id)) onToggleSelect(id);
-                  } else if (!selectedIds.includes(id)) onToggleSelect(id);
-                });
-              }}
-              className="w-4 h-4 text-accent rounded border-borderLight focus:ring-accent cursor-pointer"
-            />
-            <span>Select All</span>
-            {/* 🗑️ Trash — soft-deleted sessions live here */}
-            <button
-              onClick={openTrash}
-              title="Trash (deleted sessions, restorable for 30 days)"
-              className="ml-1 text-textMuted hover:text-accent transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-          {selectedIds.length > 0 && <span>{selectedIds.length} selected</span>}
+        <div className="flex items-center px-2 py-1.5 text-xs text-textMuted border-b border-borderLight/50">
+          <button
+            onClick={openTrash}
+            title="Trash (deleted sessions, restorable for 30 days)"
+            className="text-textMuted hover:text-accent transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       )}
 
@@ -296,15 +274,7 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
           <Card key={uniqueId} className={`session-card session-card-${uniqueId} p-3.5`}>
             <div className="flex items-center justify-between w-full gap-2">
 
-              {/* Bulk-selection checkbox */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(uniqueId)}
-                  onChange={() => onToggleSelect(uniqueId)}
-                  className="w-4 h-4 text-accent rounded border-borderLight focus:ring-accent cursor-pointer flex-shrink-0"
-                />
-
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {editingId === uniqueId ? (
@@ -380,17 +350,6 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
               </div>
 
               <div className="flex items-center gap-0.5 flex-shrink-0">
-                {/* Confirm-gated delete in Dashboard, undoable for 30 days */}
-                {onDelete && (
-                  <button
-                    onClick={() => onDelete(uniqueId)}
-                    title="Move to Trash (undoable)"
-                    className="text-textMuted hover:text-red-500 transition-colors p-1.5"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
-
                 {/* Expand → saved links */}
                 <button
                   onClick={() => toggleExpand(uniqueId)}
@@ -459,7 +418,7 @@ export default function SessionList({ sessions, selectedIds, onToggleSelect, onD
                 <button
                   onClick={() => restoreTabs(session)}
                   title="Reopen every saved tab, window and group from this session"
-                  className="ml-1 flex items-center gap-1.5 bg-accent hover:bg-blue-700 dark:hover:bg-blue-300 text-onAccent text-xs font-semibold px-4 py-2 rounded-[10px] shadow-sm transition-colors flex-shrink-0"
+                  className="ml-1 flex items-center gap-1.5 bg-accent hover:bg-violet-700 dark:hover:bg-violet-300 text-onAccent text-xs font-semibold px-4 py-2 rounded-[10px] shadow-sm transition-colors flex-shrink-0"
                 >
                   <RotateCcw size={13} /> Restore
                 </button>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Layers, Trash2, CloudOff, Cloud, Settings as SettingsIcon,
+  Layers, CloudOff, Cloud, Settings as SettingsIcon,
   FolderCog, Archive, Sun, Moon, Monitor, Search, X, Zap, Pen
 } from 'lucide-react';
 // 🆕 LOCAL-FIRST: sessions live in chrome.storage.local (services/store.js).
 // Cloud (services/api.js) is now only an optional sync layer.
 import {
-  getSessions, createSession, deleteSession, deleteBulkSessions,
+  getSessions, createSession, deleteSession,
   restoreBulkSessions, getSettings
 } from '../../services/store';
 // 🆕 v1 capture — the ONLY way a session is created (locked schema)
@@ -43,7 +43,6 @@ function autoSessionName() {
 
 export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onCycleTheme }) {
   const [sessions, setSessions] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]); // 🆕 Selected sessions for bulk delete
   // 🆕 Undo toast state — soft-deleted sessions can be restored for 7s after delete
   const [undoInfo, setUndoInfo] = useState(null); // { ids, count }
   const undoTimerRef = useRef(null);
@@ -151,29 +150,6 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
     } catch (err) { console.error('Delete failed:', err); }
   };
 
-  // 🆕 Toggle single selection
-  const handleToggleSelect = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  // 🆕 Bulk Delete — confirm-gated, then SOFT delete with Undo
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    setConfirm(null);
-
-    try {
-      await deleteBulkSessions(selectedIds);
-      showUndo(selectedIds); // delete is SOFT — Undo offered for 7s
-      setSelectedIds([]);
-      loadSessions();
-    } catch (err) {
-      console.error('Bulk delete failed:', err);
-      loadSessions(); // Revert changes if API fails
-    }
-  };
-
   // 🆕 UNDO — restore the just-deleted sessions from trash
   const handleUndoDelete = async () => {
     const ids = undoInfo?.ids || [];
@@ -189,14 +165,14 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
   useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-blue-50/80 dark:from-primary dark:to-secondary/70 p-5 flex flex-col relative overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-b from-primary to-violet-50/80 dark:from-primary dark:to-secondary/70 p-5 flex flex-col relative overflow-hidden">
 
       {/* ── Header: logo + wordmark + tagline, theme + cloud on the right ── */}
       <div className="flex justify-between items-center mb-1.5 relative z-10">
         <div className="flex items-center gap-2.5">
           <Logo size={26} />
           <div>
-            <h1 className="text-lg font-bold text-blue-800 dark:text-textMain tracking-tight leading-none">
+            <h1 className="text-lg font-bold text-violet-800 dark:text-textMain tracking-tight leading-none">
               Orbitabs
             </h1>
             <p className="text-[11px] text-textMuted mt-0.5 leading-none">
@@ -258,11 +234,11 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
             <WelcomeCard onQuickSave={handleQuickSave} />
 
             {/* ── Save bar: the ONE obvious primary action ── */}
-            <div className="w-full p-3 rounded-[14px] bg-gradient-to-b from-white to-blue-50/70 dark:from-secondary dark:to-secondary/60 border border-borderLight/60 shadow-premium mb-2 relative z-10">
+            <div className="w-full p-3 rounded-[14px] bg-gradient-to-b from-white to-violet-50/70 dark:from-secondary dark:to-secondary/60 border border-borderLight/60 shadow-premium mb-2 relative z-10">
               <button
                 onClick={handleQuickSave}
                 title="Save every open tab, group and window right now"
-                className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-blue-700 dark:hover:bg-blue-300 text-onAccent font-semibold text-sm px-5 py-2.5 rounded-[10px] shadow-md transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-violet-700 dark:hover:bg-violet-300 text-onAccent font-semibold text-sm px-5 py-2.5 rounded-[10px] shadow-md transition-colors"
               >
                 <Zap size={15} /> Save Current Tabs
               </button>
@@ -302,28 +278,6 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
             )}
 
             {activeView === 'sessions' && <RecoveryBanner />}
-
-            {selectedIds.length > 0 && (
-              <div className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/30 rounded-[14px] mb-3">
-                <span className="text-red-600 dark:text-red-400 text-sm font-medium flex items-center gap-1">
-                  <Trash2 size={16} /> {selectedIds.length} session(s) selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedIds([])}
-                    className="text-textMuted hover:text-textMain text-xs font-medium underline"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setConfirm({ type: 'bulk' })}
-                    className="bg-red-500 hover:bg-red-600 text-onAccent px-4 py-1.5 rounded-[10px] text-sm font-medium transition-colors shadow-sm flex items-center gap-1"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
 
             {undoInfo && (
               <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 bg-secondary text-textMain border border-borderLight text-sm px-4 py-2.5 rounded-xl shadow-premium-lg flex items-center gap-3">
@@ -372,7 +326,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                   </p>
                   <button
                     onClick={handleQuickSave}
-                    className="bg-accent hover:bg-blue-700 text-onAccent text-sm font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors"
+                    className="bg-accent hover:bg-violet-700 text-onAccent text-sm font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors"
                   >
                     <span className="flex items-center gap-1.5"><Zap size={14} /> Save Current Tabs</span>
                   </button>
@@ -386,8 +340,6 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
               ) : (
                 <SessionList
                   sessions={filteredSessions}
-                  selectedIds={selectedIds}
-                  onToggleSelect={handleToggleSelect}
                   onDelete={(id) => setConfirm({ type: 'single', id })}
                   onRenamed={loadSessions}
                   onRestoreResult={handleRestoreFeedback}
@@ -445,16 +397,6 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
         cancelLabel="Cancel"
         danger
         onConfirm={() => handleDeleteOne(confirm?.id)}
-        onCancel={() => setConfirm(null)}
-      />
-      <ConfirmModal
-        open={confirm?.type === 'bulk'}
-        title={`Delete ${selectedIds.length} session${selectedIds.length > 1 ? 's' : ''}?`}
-        message="They move to Trash where you can restore them anytime within 30 days."
-        confirmLabel="Move to Trash"
-        cancelLabel="Cancel"
-        danger
-        onConfirm={handleBulkDelete}
         onCancel={() => setConfirm(null)}
       />
     </div>

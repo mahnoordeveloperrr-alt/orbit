@@ -13,11 +13,6 @@ export const registerUser = (data) => API.post('/auth/register', data);
 export const loginUser = (data) => API.post('/auth/login', data);
 export const getSessions = () => API.get('/sessions');
 export const createSession = (data) => API.post('/sessions', data);
-// ... purani lines ke neechay yeh add karo
-// export const deleteSession = (id) => API.delete(`/sessions/${id}`);
-// ... purani lines ke neechay yeh add karo
-export const deleteBulkSessions = (ids) => API.delete('/sessions/bulk', { data: { ids } });
-
 // 🆕 Trash + Undo APIs (soft delete = undoable for 30 days)
 export const deleteSession = (id) => API.delete(`/sessions/${id}`);        // → trash
 export const restoreSession = (id) => API.post(`/sessions/${id}/restore`); // undo single

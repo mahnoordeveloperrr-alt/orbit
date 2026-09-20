@@ -46,10 +46,10 @@ export default class ErrorBoundary extends React.Component {
     if (!this.props.emergency) return null;
 
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
         <div className="bg-primary/80 border border-amber-500/30 rounded-2xl p-5 max-w-[340px] text-center shadow-premium">
           <AlertTriangle size={28} className="text-amber-500 mx-auto mb-2" />
-          <h1 className="text-base font-bold text-blue-800 dark:text-slate-100 mb-1">Orbitabs hit a snag</h1>
+          <h1 className="text-base font-bold text-violet-800 dark:text-slate-100 mb-1">Orbitabs hit a snag</h1>
           <p className="text-xs text-textMuted mb-4">
             This screen failed to render. Your saved sessions are safe — they live
             in Chrome&apos;s local storage, not in this window.
@@ -63,7 +63,7 @@ export default class ErrorBoundary extends React.Component {
 
           <button
             onClick={this.handleReset}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-1.5 rounded-full shadow-md transition-colors"
+            className="bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm px-4 py-1.5 rounded-full shadow-md transition-colors"
           >
             Try again
           </button>

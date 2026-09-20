@@ -41,12 +41,12 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-blue-50/80 dark:from-primary dark:to-secondary/70 p-6 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-blue-300 dark:bg-blue-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-blue-200 dark:bg-blue-950 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
+    <div className="w-full h-full bg-gradient-to-b from-primary to-violet-50/80 dark:from-primary dark:to-secondary/70 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-violet-300 dark:bg-violet-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
+      <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-violet-200 dark:bg-violet-950 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-        <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-4 rounded-2xl shadow-xl mb-4 text-white">
+        <div className="bg-gradient-to-br from-violet-700 to-violet-800 p-4 rounded-2xl shadow-xl mb-4 text-white">
           <Layers size={28} />
         </div>
         <h1 className="text-2xl font-bold text-textMain mb-1 tracking-tight">Orbitabs</h1>
@@ -78,7 +78,7 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
           />
-          <Button type="submit" className="w-full py-3 text-base mt-2 bg-blue-700 hover:bg-blue-800">
+          <Button type="submit" className="w-full py-3 text-base mt-2 bg-violet-700 hover:bg-violet-800">
             {isLogin ? 'Login' : 'Register'}
           </Button>
         </form>

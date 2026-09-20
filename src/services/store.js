@@ -185,21 +185,6 @@ export async function deleteSession(id) {
   return { data: { message: 'Session deleted (undoable)' } };
 }
 
-/** Bulk soft delete → trash (undoable). */
-export async function deleteBulkSessions(ids) {
-  const idSet = new Set(ids || []);
-  const sessions = await readAll();
-  let count = 0;
-  sessions.forEach(s => {
-    if (idSet.has(s._id) && !s.deletedAt) {
-      s.deletedAt = new Date().toISOString();
-      count++;
-    }
-  });
-  await writeAll(sessions);
-  return { data: { message: `${count} sessions deleted (undoable).`, deletedCount: count } };
-}
-
 export async function getTrash() {
   const sessions = await purgeExpiredTrash(await readAll());
   const trashed = sessions

@@ -29,7 +29,7 @@ export default function SaveSession({ onSave, scope = 'all', onScopeChange, comp
           onClick={() => onScopeChange(scope === 'all' ? 'window' : 'all')}
           title={scope === 'all' ? 'Save EVERY open window — click to switch to the current window only' : 'Save ONLY the window you are in — click to switch to all windows'}
           className={`flex items-center gap-1 px-2.5 rounded-[10px] text-xs font-medium border transition-colors flex-shrink-0 ${scope === 'all'
-            ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+            ? 'bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-200 dark:hover:bg-violet-900/50'
             : 'bg-muted text-textMuted border-borderLight/60 hover:text-textMain'}`}
         >
           <Layers size={12} />

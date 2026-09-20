@@ -67,7 +67,7 @@
 }
 
 #mk-toolbar button.mk-active {
-  background: #2563eb;
+  background: #7c3aed;
   color: #fff;
 }
 
@@ -177,10 +177,10 @@
   transform: translateX(-50%);
   padding: 6px 14px;
   border-radius: 9999px;
-  background: #2563eb;
+  background: #7c3aed;
   color: #fff;
   font: 600 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
 }
 
 #mk-text-input {
@@ -188,7 +188,7 @@
   min-width: 200px;
   min-height: 48px;
   padding: 6px 8px;
-  border: 2px solid #2563eb;
+  border: 2px solid #7c3aed;
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.95);
   color: #f8fafc;
@@ -238,7 +238,7 @@
 }
 
 #mk-shape-picker button.mk-active {
-  background: #2563eb;
+  background: #7c3aed;
   color: #fff;
 }
 
@@ -254,9 +254,9 @@
   padding: 8px 14px;
   border: none;
   border-radius: 9999px;
-  background: #2563eb;
+  background: #7c3aed;
   color: #fff;
   font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
   cursor: pointer;
 }

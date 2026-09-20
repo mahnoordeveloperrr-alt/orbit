@@ -313,7 +313,7 @@ export default function OrganizePanel() {
               placeholder="Group name"
               className="flex-1 min-w-0 text-xs font-semibold text-textMain bg-primary border border-accent/40 rounded-md px-1.5 py-0.5 focus:outline-none focus:border-accent"
             />
-            <button onClick={() => commitRename(group)} title="Save name" className="p-1 text-accent hover:text-indigo-700">
+            <button onClick={() => commitRename(group)} title="Save name" className="p-1 text-accent hover:text-violet-700">
               <Check size={12} />
             </button>
             <button onClick={() => setEditingGroupId(null)} title="Cancel" className="p-1 text-textMuted hover:text-red-500">
@@ -335,7 +335,7 @@ export default function OrganizePanel() {
           <button
             onClick={() => handleAddToGroup(win)}
             title={`Add ${selCount} selected tab${selCount > 1 ? 's' : ''} to this group`}
-            className="p-1 text-accent hover:text-indigo-700 border border-accent/40 rounded-full transition-colors"
+            className="p-1 text-accent hover:text-violet-700 border border-accent/40 rounded-full transition-colors"
           >
             <Plus size={12} />
           </button>
@@ -539,7 +539,7 @@ export default function OrganizePanel() {
                 </span>
                 <button
                   onClick={() => handleCreateGroup(win)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-indigo-700 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-violet-700 transition-colors"
                 >
                   <Plus size={12} /> New group
                 </button>

@@ -6,16 +6,16 @@
    ORBITABS DESIGN SYSTEM
    Font: Inter (UI + headings — headings are just heavier weights)
    Radius scale: cards 14px · controls 10px · pills full
-   Accent: Royal Blue #2563eb (light) / #60a5fa (dark readability)
+   Accent: Violet #7c3aed (light) / #a78bfa (dark readability)
    Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain/accent hover
    Motion: NONE. The UI must feel instant — hover is a color swap, not a
    movement. No entrance animations, no staggers, no GSAP.
    ------------------------------------------------------------------ */
 :root {
   --c-primary: 255 255 255;      /* surface */
-  --c-secondary: 239 246 255;    /* soft surface / elevated fills */
-  --c-accent: 37 99 235;         /* Royal Blue (Blue-600) */
-  --c-accent-light: 191 219 254; /* Soft Royal Blue glow */
+  --c-secondary: 245 243 255;    /* soft surface / elevated fills (Violet 50) */
+  --c-accent: 124 58 237;        /* Violet 600 */
+  --c-accent-light: 221 214 254; /* Soft Violet glow (Violet 200) */
   --c-text-main: 15 23 42;       /* Slate 900 */
   --c-text-muted: 100 116 139;   /* Slate 500 */
   --c-border: 226 232 240;       /* Slate 200 */
@@ -30,13 +30,13 @@
 .dark {
   --c-primary: 15 23 42;         /* Slate 900 surface */
   --c-secondary: 30 41 59;       /* Slate 800 elevated */
-  --c-accent: 96 165 250;        /* Royal Blue 400 — readable on dark */
-  --c-accent-light: 30 64 175;   /* Royal Blue 800 glow */
+  --c-accent: 167 139 250;       /* Violet 400 — readable on dark */
+  --c-accent-light: 91 33 182;   /* Violet 900 glow */
   --c-text-main: 241 245 249;    /* Slate 100 */
   --c-text-muted: 148 163 184;   /* Slate 400 */
   --c-border: 51 65 85;          /* Slate 700 */
   --c-muted: 30 41 59;           /* subtle fills (Slate 800) */
-  --c-on-accent: 15 23 42;       /* dark text on light-blue fills */
+  --c-on-accent: 15 23 42;       /* dark text on light-violet fills */
   --c-glass-bg: 15 23 42;
   --c-glass-border: 148 163 184;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.4);

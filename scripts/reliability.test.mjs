@@ -325,7 +325,7 @@ console.log('\n── B1: SessionList URL scheme handling ──');
   const container = dom.window.document.getElementById('root');
   container.innerHTML = '';
   const rootEl = require('react-dom/client').createRoot(container);
-  await act(async () => { rootEl.render(React.createElement(SessionList, { sessions: stored.orbi_sessions, selectedIds: [], onToggleSelect: () => {}, onDelete: () => {}, onRenamed: () => {} })); });
+  await act(async () => { rootEl.render(React.createElement(SessionList, { sessions: stored.orbi_sessions, onDelete: () => {}, onRenamed: () => {} })); });
   await tick(80);
 
   // Expand the card to see saved links (chevron now carries a title)
