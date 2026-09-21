@@ -189,7 +189,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 p-5 flex flex-col relative overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-violet-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
 
       <Header onBack={onBack} />
@@ -396,7 +396,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
               </p>
             </div>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              cloudUser ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
+              cloudUser ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400' : 'bg-secondary text-gray-500 dark:text-slate-400'
             }`}>
               {cloudUser ? '✓ Connected' : 'Local'}
             </span>
@@ -628,7 +628,7 @@ function Toggle({ checked, onChange }) {
     <button
       onClick={onChange}
       className={`relative w-11 h-6 rounded-full transition-colors ${
-        checked ? 'bg-violet-600 dark:bg-violet-500' : 'bg-gray-300 dark:bg-slate-600'
+        checked ? 'bg-violet-600 dark:bg-violet-500' : 'bg-gray-300 dark:bg-secondary'
       }`}
     >
       <span

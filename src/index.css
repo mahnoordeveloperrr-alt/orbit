@@ -7,12 +7,14 @@
    Font: Inter (UI + headings — headings are just heavier weights)
    Radius scale: cards 14px · controls 10px · pills full
    Accent: Violet #7c3aed (light) / #a78bfa (dark readability)
+   Dark theme: violet-black (purple-tinted) — NOT blue-slate.
+   Glass: cards/panels use .glass — translucent surface + backdrop blur.
    Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain/accent hover
    Motion: NONE. The UI must feel instant — hover is a color swap, not a
    movement. No entrance animations, no staggers, no GSAP.
    ------------------------------------------------------------------ */
 :root {
-  --c-primary: 255 255 255;      /* surface */
+  --c-primary: 255 255 255;      /* page surface (theme backdrop) */
   --c-secondary: 245 243 255;    /* soft surface / elevated fills (Violet 50) */
   --c-accent: 124 58 237;        /* Violet 600 */
   --c-accent-light: 221 214 254; /* Soft Violet glow (Violet 200) */
@@ -21,26 +23,42 @@
   --c-border: 226 232 240;       /* Slate 200 */
   --c-muted: 241 245 249;        /* subtle fills (Slate 100) */
   --c-on-accent: 255 255 255;    /* text on accent fills */
-  --c-glass-bg: 255 255 255;     /* legacy glass surfaces (transitional) */
-  --c-glass-border: 255 255 255;
-  --shadow-premium: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-premium-lg: 0 4px 12px -2px rgba(15, 23, 42, 0.10);
+  /* Glass: translucent white card over the violet-tinted page gradient */
+  --c-glass-bg: 255 255 255;     /* card fill at --glass-alpha opacity */
+  --glass-alpha: 0.72;
+  --glass-border: 255 255 255;   /* border at 60% alpha (highlight edge) */
+  --glass-blur: 14px;
+  --shadow-premium: 0 1px 2px rgba(76, 29, 149, 0.06);
+  --shadow-premium-lg: 0 4px 12px -2px rgba(76, 29, 149, 0.14);
 }
 
 .dark {
-  --c-primary: 15 23 42;         /* Slate 900 surface */
-  --c-secondary: 30 41 59;       /* Slate 800 elevated */
+  /* Violet-black night surface (purple-tinted, not blue-slate) */
+  --c-primary: 18 13 30;         /* near-black plum */
+  --c-secondary: 30 23 48;       /* plum elevated */
   --c-accent: 167 139 250;       /* Violet 400 — readable on dark */
   --c-accent-light: 91 33 182;   /* Violet 900 glow */
   --c-text-main: 241 245 249;    /* Slate 100 */
-  --c-text-muted: 148 163 184;   /* Slate 400 */
-  --c-border: 51 65 85;          /* Slate 700 */
-  --c-muted: 30 41 59;           /* subtle fills (Slate 800) */
+  --c-text-muted: 165 160 180;   /* muted plum-grey */
+  --c-border: 56 46 76;          /* plum border */
+  --c-muted: 30 23 48;           /* subtle fills */
   --c-on-accent: 15 23 42;       /* dark text on light-violet fills */
-  --c-glass-bg: 15 23 42;
-  --c-glass-border: 148 163 184;
-  --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  /* Glass: translucent plum card over the violet night gradient */
+  --c-glass-bg: 30 23 48;
+  --glass-alpha: 0.55;
+  --glass-border: 167 139 250;   /* faint violet edge highlight */
+  --glass-blur: 14px;
+  --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.55);
+}
+
+/* Glass surface: translucent fill + backdrop blur + highlight border.
+   Used for cards/panels so the page gradient glows through. */
+.glass {
+  background-color: rgb(var(--c-glass-bg) / var(--glass-alpha));
+  border-color: rgb(var(--c-glass-border) / 0.28);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
 }
 
 @layer base {
@@ -51,6 +69,17 @@
      clean edge-to-edge brand color in both light and dark mode. */
   html, body {
     background-color: rgb(var(--c-primary));
+    /* The popup is a fixed 420×560 shell — the document must NEVER scroll
+       (a scrollbar would drag the theme background along and leak it below
+       the rounded shell edge). Pages scroll internally via .custom-scrollbar. */
+    overflow: hidden;
+  }
+  /* Glass needs a tinted page to glow through — never flat white/black.
+     Tokens swap per mode, so one rule covers light AND dark. */
+  html {
+    background-image:
+      radial-gradient(120% 90% at 50% -10%, rgb(var(--c-accent) / 0.14), transparent 60%),
+      linear-gradient(to bottom, rgb(var(--c-primary)), rgb(var(--c-secondary)));
   }
   body {
     @apply text-textMain antialiased;

@@ -85,7 +85,17 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
     }
   };
 
-  // 🆕 TRASH view state (soft-deleted sessions, restorable)
+  // 🆕 TRASH — open, restore (undo), purge (permanent), empty
+  const openTrash = async () => {
+    setShowTrash(true);
+    setTrashLoading(true);
+    try {
+      const res = await getTrash();
+      setTrashItems(res.data);
+    } catch (err) { console.error('Trash load failed:', err); }
+    setTrashLoading(false);
+  };
+
   const [showTrash, setShowTrash] = useState(false);
   const [trashItems, setTrashItems] = useState([]);
   const [trashLoading, setTrashLoading] = useState(false);
@@ -145,17 +155,6 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
     // Fallback (dev preview outside Chrome): open every tab flat
     v1.windows.forEach(w => w.tabs.forEach(t => openTab(t.url)));
     onRestoreResult?.({ ok: true, restoredTabs: expected, expectedTabs: expected, windows: v1.windows });
-  };
-
-  // 🆕 TRASH — open, restore (undo), purge (permanent), empty
-  const openTrash = async () => {
-    setShowTrash(true);
-    setTrashLoading(true);
-    try {
-      const res = await getTrash();
-      setTrashItems(res.data);
-    } catch (err) { console.error('Trash load failed:', err); }
-    setTrashLoading(false);
   };
 
   const handleTrashRestore = async (id) => {
@@ -253,19 +252,6 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
 
   return (
     <div className="space-y-2 mt-2">
-      {/* Header: trash entry (soft-deleted sessions, restorable) */}
-      {sessions.length > 0 && (
-        <div className="flex items-center px-2 py-1.5 text-xs text-textMuted border-b border-borderLight/50">
-          <button
-            onClick={openTrash}
-            title="Trash (deleted sessions, restorable for 30 days)"
-            className="text-textMuted hover:text-accent transition-colors"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      )}
-
       {sessions.map((session) => {
         const uniqueId = sid(session);
         const v1 = normalizeSession(session); // 🆕 v1 view (also covers legacy docs)
@@ -468,6 +454,17 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
           </Card>
         );
       })}
+
+      {/* Trash entry — small muted row at the very bottom of the list */}
+      {sessions.length > 0 && (
+        <button
+          onClick={openTrash}
+          title="Trash — deleted sessions, restorable for 30 days"
+          className="flex items-center gap-1.5 px-2 py-1 text-[11px] text-textMuted/70 hover:text-accent transition-colors"
+        >
+          <Trash2 size={12} /> Trash
+        </button>
+      )}
     </div>
   );
 }

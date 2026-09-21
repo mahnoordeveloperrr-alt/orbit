@@ -234,7 +234,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
             <WelcomeCard onQuickSave={handleQuickSave} />
 
             {/* ── Save bar: the ONE obvious primary action ── */}
-            <div className="w-full p-3 rounded-[14px] bg-gradient-to-b from-white to-violet-50/70 dark:from-secondary dark:to-secondary/60 border border-borderLight/60 shadow-premium mb-2 relative z-10">
+            <div className="w-full p-3 rounded-[14px] glass border shadow-premium mb-2 relative z-10">
               <button
                 onClick={handleQuickSave}
                 title="Save every open tab, group and window right now"
@@ -301,7 +301,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
                   placeholder="Search sessions by name or URL…"
-                  className="w-full bg-white/85 dark:bg-secondary/90 rounded-[10px] pl-9 pr-8 py-2 text-sm text-textMain placeholder:text-textMuted/60 focus:outline-none focus:border-accent/60 border border-borderLight/60 transition-colors"
+                  className="w-full glass rounded-[10px] pl-9 pr-8 py-2 text-sm text-textMain placeholder:text-textMuted/60 focus:outline-none focus:border-accent/60 border transition-colors"
                 />
                 {query && (
                   <button

@@ -40,10 +40,11 @@ function App() {
   };
 
   return (
-    <div className="w-[420px] h-[560px] bg-primary rounded-2xl border border-borderLight/60 overflow-hidden">
-      {/* rounded shell; the PAGE paints the theme color (index.css base layer),
-          so the corner cutouts show the brand surface — never Chrome's white
-          canvas. The border gives the shell a crisp, deliberate edge. */}
+    <div className="w-[420px] h-[560px] rounded-2xl border border-borderLight/60 overflow-hidden">
+      {/* rounded shell; the PAGE paints the theme (index.css base layer —
+          violet gradient + glow), and it stays visible through the shell so
+          glass cards have something luminous behind their blur. No opaque
+          shell fill: that would flatten the glass effect back to solid. */}
       {view === 'login' ? (
         <Login
           initialMode={loginMode}

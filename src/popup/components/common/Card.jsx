@@ -1,10 +1,11 @@
 import React from 'react';
 
-// Flat, professional card: subtle border + shadow, 14px radius.
-// Hover deepens the shadow slightly — a color/shadow change, never movement.
+// Glass card: translucent surface + backdrop blur over the violet page
+// gradient, subtle border + shadow, 14px radius. Hover deepens the shadow
+// slightly — a color/shadow change, never movement.
 export default function Card({ children, className = '' }) {
   return (
-    <div className={`bg-primary rounded-[14px] border border-borderLight/70 shadow-premium hover:shadow-premium-lg transition-shadow duration-150 ${className}`}>
+    <div className={`glass rounded-[14px] border shadow-premium hover:shadow-premium-lg transition-shadow duration-150 ${className}`}>
       {children}
     </div>
   );
