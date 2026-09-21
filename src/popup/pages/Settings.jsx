@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, Shield, Palette, Cloud, CloudOff, HardDrive, RefreshCw,
   Download, Upload, Trash2, Keyboard, SlidersHorizontal,
-  RotateCcw, Eraser, History, XCircle
+  RotateCcw, Eraser, History, XCircle, Info, LogIn, UserPlus,
+  Moon, Sun, Laptop, Check, Ban, TriangleAlert
 } from 'lucide-react';
 import {
   getSettings, setSetting, getSessions, importSessions,
@@ -181,7 +182,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
 
   if (!settings) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 p-5 flex flex-col relative overflow-hidden">
+      <div className="w-full h-full bg-gradient-to-br from-zinc-50 via-zinc-100 to-zinc-200 p-5 flex flex-col relative overflow-hidden">
         <Header onBack={onBack} />
         <div className="flex-1 flex items-center justify-center text-textMuted text-sm">Loading settings…</div>
       </div>
@@ -189,8 +190,8 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+    <div className="w-full h-full bg-gradient-to-br from-zinc-50 via-zinc-100 to-zinc-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
 
       <Header onBack={onBack} />
 
@@ -214,7 +215,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
               <select
                 value={settings.autoSaveFreqSec}
                 onChange={(e) => update({ autoSaveFreqSec: Number(e.target.value) })}
-                className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
+                className="max-w-full truncate text-xs rounded-lg border border-zinc-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-zinc-800 dark:text-zinc-300 font-medium focus:outline-none"
               >
                 {FREQ_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -275,7 +276,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <select
               value={settings.maxRecoveryPoints}
               onChange={(e) => update({ maxRecoveryPoints: Number(e.target.value) })}
-              className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
+              className="max-w-full truncate text-xs rounded-lg border border-zinc-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-zinc-800 dark:text-zinc-300 font-medium focus:outline-none"
             >
               {RING_OPTIONS.map(n => <option key={n} value={n}>{n} points</option>)}
             </select>
@@ -285,7 +286,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <select
               value={settings.trashRetentionDays}
               onChange={(e) => update({ trashRetentionDays: Number(e.target.value) })}
-              className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
+              className="max-w-full truncate text-xs rounded-lg border border-zinc-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-zinc-800 dark:text-zinc-300 font-medium focus:outline-none"
             >
               {RETENTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -294,13 +295,13 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setConfirm({ type: 'recovery' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors"
             >
               <Eraser size={12} /> Clear recovery data
             </button>
             <button
               onClick={() => setConfirm({ type: 'trash' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors"
             >
               <Trash2 size={12} /> Clear trash
             </button>
@@ -341,24 +342,24 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
 
           {/* What data Orbitabs stores — plain-English guarantees */}
           <ul className="text-[11px] text-textMuted space-y-1.5 leading-relaxed mt-1">
-            <li>✅ Sessions, auto-save snapshots, and settings live only in <span className="font-semibold text-textMain">this browser's local storage</span> — they work offline.</li>
-            <li>✅ Nothing is uploaded anywhere unless you sign in AND turn on cloud sync — and then only your saved sessions.</li>
-            <li>✅ No analytics, no tracking, no ads. The only network call is your own backend when cloud sync is on.</li>
-            <li>🚫 Orbitabs never reads page content, never changes tabs you didn't act on, and never deletes without a confirm dialog.</li>
+            <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>Sessions, auto-save snapshots, and settings live only in <span className="font-semibold text-textMain">this browser's local storage</span> — they work offline.</span></li>
+            <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>Nothing is uploaded anywhere unless you sign in AND turn on cloud sync — and then only your saved sessions.</span></li>
+            <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>No analytics, no tracking, no ads. The only network call is your own backend when cloud sync is on.</span></li>
+            <li className="flex items-start gap-1.5"><Ban size={13} className="text-red-500 mt-0.5 flex-shrink-0" /><span>Orbitabs never reads page content, never changes tabs you didn't act on, and never deletes without a confirm dialog.</span></li>
           </ul>
 
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={handleExport}
               disabled={backupBusy}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50"
             >
               <Download size={14} /> Export all data
             </button>
             <button
               onClick={handleImport}
               disabled={backupBusy}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50"
             >
               <Upload size={14} /> Import data
             </button>
@@ -398,22 +399,22 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               cloudUser ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400' : 'bg-secondary text-gray-500 dark:text-slate-400'
             }`}>
-              {cloudUser ? '✓ Connected' : 'Local'}
+              {cloudUser ? <><Check size={12} className="inline flex-shrink-0" /> Connected</> : 'Local'}
             </span>
           </div>
           {!cloudUser && (
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => onOpenLogin?.('login')}
-                className="px-3 py-2 rounded-lg bg-blue-700 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-800 dark:hover:bg-blue-400 transition-colors shadow-sm"
+                className="px-3 py-2 rounded-lg bg-gradient-to-b from-blue-500 to-blue-700 text-white text-sm font-semibold hover:from-blue-400 hover:to-blue-600 transition-colors shadow-sm flex items-center justify-center gap-1.5"
               >
-                Sign in
+                <LogIn size={13} /> Sign in
               </button>
               <button
                 onClick={() => onOpenLogin?.('register')}
-                className="px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center gap-1.5"
               >
-                Create account
+                <UserPlus size={13} /> Create account
               </button>
             </div>
           )}
@@ -438,10 +439,10 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
                 ['Restore session', 'Alt+Shift+R'],
                 ['Open Orbitabs', 'Alt+Shift+O'],
               ].map(([label, keys]) => (
-                <tr key={label} className="border-b border-blue-50 last:border-0">
+                <tr key={label} className="border-b border-zinc-100 last:border-0">
                   <td className="py-1.5 text-textMain font-medium">{label}</td>
                   <td className="py-1.5 text-right">
-                    <kbd className="px-2 py-0.5 rounded bg-blue-50 dark:bg-secondary border border-blue-200 dark:border-borderLight text-blue-800 dark:text-blue-300 font-mono text-[11px]">{keys}</kbd>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-50 dark:bg-secondary border border-zinc-200 dark:border-borderLight text-zinc-800 dark:text-zinc-300 font-mono text-[11px]">{keys}</kbd>
                   </td>
                 </tr>
               ))}
@@ -452,7 +453,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           </p>
           <button
             onClick={openShortcutSettings}
-            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors"
           >
             <Keyboard size={12} /> Change in Chrome's shortcut settings
           </button>
@@ -462,19 +463,19 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
         <Section icon={<Trash2 size={16} />} title="Data Management">
           <div className="grid grid-cols-2 gap-2">
             <button onClick={handleExport} disabled={backupBusy}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50">
               <Download size={13} /> Export
             </button>
             <button onClick={handleImport} disabled={backupBusy}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50">
               <Upload size={13} /> Import
             </button>
             <button onClick={() => setConfirm({ type: 'trash' })}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors">
               <Trash2 size={13} /> Empty Trash
             </button>
             <button onClick={() => setConfirm({ type: 'recovery' })}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors">
               <History size={13} /> Clear recovery history
             </button>
           </div>
@@ -505,17 +506,17 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             </div>
             <button
               onClick={onCycleTheme}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors"
             >
-              {theme === 'dark' ? '🌙 Dark' : theme === 'light' ? '☀️ Light' : '💻 System'}
+              {theme === 'dark' ? <><Moon size={14} /> Dark</> : theme === 'light' ? <><Sun size={14} /> Light</> : <><Laptop size={14} /> System</>}
             </button>
           </div>
         </Section>
 
         {/* ═══════════ ℹ️ ABOUT ═══════════ */}
-        <Section icon={<span className="text-blue-600 dark:text-blue-400">ℹ️</span>} title="About">
+        <Section icon={<Info size={16} />} title="About">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-textMain">Orbitabs v1.2.0</p>
+            <p className="text-sm font-medium text-textMain">Orbitabs v1.4.3</p>
             <p className="text-xs text-textMuted">
               Save and restore your browser sessions instantly.
               Works offline — no account required.
@@ -568,37 +569,43 @@ function Header({ onBack }) {
     <div className="flex items-center gap-3 mb-5 relative z-10">
       <button
         onClick={onBack}
-        className="p-2 rounded-xl bg-white/80 hover:bg-white text-blue-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-blue-300 shadow-sm transition-colors"
+        className="p-2 rounded-xl bg-white/80 hover:bg-white text-zinc-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-zinc-300 shadow-sm transition-colors"
       >
         <ArrowLeft size={18} />
       </button>
-      <h1 className="text-xl font-bold text-blue-800 dark:text-slate-100 tracking-tight">Settings</h1>
+      <h1 className="text-xl font-bold text-textMain tracking-tight">Settings</h1>
     </div>
   );
 }
 
-// Reusable Section component
+// Reusable Section component — each settings box carries one of the five
+// box tints, cycled in order (purple, orange, pink, blue, green).
+const SECTION_COLORS = ['purple', 'orange', 'pink', 'blue', 'green'];
+let sectionCount = 0;
 function Section({ icon, title, children }) {
+  const color = SECTION_COLORS[sectionCount++ % SECTION_COLORS.length];
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-blue-100 dark:bg-secondary/90 dark:border-borderLight shadow-sm">
+    <div className={`glass box-${color} rounded-xl p-4 border shadow-sm`}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-blue-600 dark:text-blue-400">{icon}</span>
-        <h2 className="text-sm font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide">{title}</h2>
+        <span className="text-textMain">{icon}</span>
+        <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-300 uppercase tracking-wide">{title}</h2>
       </div>
       {children}
     </div>
   );
 }
 
-// Setting row: label + description on the left, control on the right
+// Setting row: label + description on the left, control on the right.
+// The control column gets a max-width share so long dropdown labels can't
+// squeeze the title into a broken mid-word wrap.
 function Row({ title, desc, children }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-textMain">{title}</p>
         {desc && <p className="text-[11px] text-textMuted leading-snug">{desc}</p>}
       </div>
-      <div className="flex-shrink-0">{children}</div>
+      <div className="flex-shrink-0 max-w-[55%]">{children}</div>
     </div>
   );
 }
@@ -606,13 +613,13 @@ function Row({ title, desc, children }) {
 // Two-option segmented control (scope, restore behavior)
 function Segmented({ value, options, onChange }) {
   return (
-    <div className="flex rounded-lg border border-blue-200 dark:border-borderLight overflow-hidden">
+    <div className="flex rounded-lg border border-zinc-200 dark:border-borderLight overflow-hidden">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            value === o.value ? 'bg-blue-600 dark:bg-blue-500 text-white' : 'bg-white dark:bg-secondary text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-muted'
+            value === o.value ? 'bg-accent text-white' : 'bg-white dark:bg-secondary text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-muted'
           }`}
         >
           {o.label}
@@ -628,7 +635,7 @@ function Toggle({ checked, onChange }) {
     <button
       onClick={onChange}
       className={`relative w-11 h-6 rounded-full transition-colors ${
-        checked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-secondary'
+        checked ? 'bg-accent' : 'bg-gray-300 dark:bg-secondary'
       }`}
     >
       <span
@@ -646,10 +653,10 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
     return <p className="text-xs text-textMuted italic">Open the extension in Chrome to see recovery history</p>;
   }
   return (
-    <div className="mt-3 pt-3 border-t border-blue-50">
+    <div className="mt-3 pt-3 border-t border-zinc-100">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Recovery history</p>
-        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-accent hover:text-zinc-800 dark:hover:text-zinc-300 font-medium">
           <RefreshCw size={11} /> Refresh
         </button>
       </div>
@@ -659,7 +666,7 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
       </div>
       {diag.crashQueued && (
         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2 mb-2">
-          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">⚠️ Crash detected — restore available</p>
+          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium flex items-center gap-1.5"><TriangleAlert size={13} className="flex-shrink-0" />Crash detected — restore available</p>
         </div>
       )}
       {diag.recoveryPoints.length > 0 ? (
@@ -674,7 +681,7 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
                 </span>
                 <button
                   onClick={() => onRestore(i)}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                  className="text-xs text-accent hover:text-zinc-800 dark:hover:text-zinc-300 font-medium"
                 >
                   Restore
                 </button>
@@ -691,8 +698,8 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="bg-blue-50 dark:bg-blue-950/40 rounded-lg p-2 text-center">
-      <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{value}</p>
+    <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-lg p-2 text-center">
+      <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{value}</p>
       <p className="text-[10px] text-textMuted uppercase">{label}</p>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { loginUser, registerUser } from '../../services/api';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import { Layers } from 'lucide-react';
+import { Layers, CircleAlert, CheckCircle2 } from 'lucide-react';
 
 export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
   // 🆕 Settings → Account can deep-link straight into "Create account".
@@ -28,7 +28,7 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
         res = await registerUser({ name, email, password });
         // 🔥 Register par token nahi aaya, direct message aaya
         if (res.data.needsVerification) {
-          setSuccessMsg('✅ ' + res.data.message);
+          setSuccessMsg(res.data.message);
           setEmail('');
           setPassword('');
           setName('');
@@ -41,12 +41,12 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-blue-50/80 dark:from-primary dark:to-secondary/70 p-6 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-blue-300 dark:bg-blue-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-blue-200 dark:bg-blue-950 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
+    <div className="w-full h-full bg-gradient-to-b from-primary to-zinc-100/80 dark:from-primary dark:to-secondary/70 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-zinc-300 dark:bg-zinc-800 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
+      <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-zinc-200 dark:bg-zinc-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-        <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-4 rounded-2xl shadow-xl mb-4 text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-4 rounded-2xl shadow-xl shadow-blue-900/40 mb-4 text-white">
           <Layers size={28} />
         </div>
         <h1 className="text-2xl font-bold text-textMain mb-1 tracking-tight">Orbitabs</h1>
@@ -54,8 +54,8 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
           {isLogin ? 'Welcome back' : 'Create your account'}
         </p>
 
-        {error && <div className="w-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl mb-4 text-center">{error}</div>}
-        {successMsg && <div className="w-full bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 text-sm p-3 rounded-xl mb-4 text-center">{successMsg}</div>}
+        {error && <div className="w-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl mb-4 text-center flex items-center justify-center gap-1.5"><CircleAlert size={14} className="flex-shrink-0" />{error}</div>}
+        {successMsg && <div className="w-full bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 text-sm p-3 rounded-xl mb-4 text-center flex items-center justify-center gap-1.5"><CheckCircle2 size={14} className="flex-shrink-0" />{successMsg}</div>}
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           {!isLogin && (
@@ -78,7 +78,7 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
           />
-          <Button type="submit" className="w-full py-3 text-base mt-2 bg-blue-700 hover:bg-blue-800">
+          <Button type="submit" className="w-full py-3 text-base mt-2">
             {isLogin ? 'Login' : 'Register'}
           </Button>
         </form>

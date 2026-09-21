@@ -21,8 +21,8 @@ export default function Logo({ size = 20, mono = false }) {
     <svg viewBox="0 0 32 32" style={box} aria-hidden="true">
       <defs>
         <linearGradient id="orbi-g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2563eb" />
-          <stop offset="1" stopColor="#1d4ed8" />
+          <stop offset="0" stopColor="#a855f7" />
+          <stop offset="1" stopColor="#ec4899" />
         </linearGradient>
       </defs>
       <rect x="0" y="0" width="32" height="32" rx="7.5" fill="url(#orbi-g)" />

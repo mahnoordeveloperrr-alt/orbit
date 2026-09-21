@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import Card from '../common/Card';
 import { dotClassFor } from '../../utils/groupColors';
+import { boxColorFor, BOX_GRADIENTS } from '../../utils/boxColors';
 // 🆕 LOCAL-FIRST: trash/restore/purge operate on chrome.storage.local via store.js
 import {
   getTrash, restoreSession, purgeSession, emptyTrash, renameSession,
@@ -213,7 +214,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
           trashItems.map((session) => {
             const uid = sid(session);
             return (
-              <Card key={uid} className="session-card p-4">
+              <Card key={uid} className="session-card p-4" color="orange">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
                     <FolderOpen className="text-textMuted w-5 h-5 flex-shrink-0" />
@@ -230,7 +231,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleTrashRestore(uid)}
-                      className="flex items-center gap-1 text-accent hover:text-blue-700 text-sm font-medium px-2"
+                      className="flex items-center gap-1 text-orange-600 dark:text-orange-400 hover:brightness-110 text-sm font-medium px-2"
                     >
                       <RotateCcw size={14} /> Restore
                     </button>
@@ -252,12 +253,13 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
 
   return (
     <div className="space-y-2 mt-2">
-      {sessions.map((session) => {
+      {sessions.map((session, i) => {
         const uniqueId = sid(session);
         const v1 = normalizeSession(session); // 🆕 v1 view (also covers legacy docs)
+        const boxColor = boxColorFor(i); // this card's color — bar, border AND button share it
         // NB: no overflow-hidden on this card — it clipped the card's ⋯ dropdown menu
         return (
-          <Card key={uniqueId} className={`session-card session-card-${uniqueId} p-3.5`}>
+          <Card key={uniqueId} className={`session-card session-card-${uniqueId} p-3.5`} color={boxColor}>
             <div className="flex items-center justify-between w-full gap-2">
 
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -400,11 +402,11 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   )}
                 </div>
 
-                {/* THE action — obvious, always in the same place */}
+                {/* THE action — obvious, always in the same place, wears the card's color */}
                 <button
                   onClick={() => restoreTabs(session)}
                   title="Reopen every saved tab, window and group from this session"
-                  className="ml-1 flex items-center gap-1.5 bg-accent hover:bg-blue-700 dark:hover:bg-blue-300 text-onAccent text-xs font-semibold px-4 py-2 rounded-[10px] shadow-sm transition-colors flex-shrink-0"
+                  className={`ml-1 flex items-center gap-1.5 bg-gradient-to-b text-white text-xs font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors flex-shrink-0 ${BOX_GRADIENTS[boxColor]}`}
                 >
                   <RotateCcw size={13} /> Restore
                 </button>

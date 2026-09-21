@@ -6,47 +6,64 @@
    ORBITABS DESIGN SYSTEM
    Font: Inter (UI + headings — headings are just heavier weights)
    Radius scale: cards 14px · controls 10px · pills full
-   Accent: Royal Blue #2563eb (light) / #3b82f6 (dark readability)
-   Dark theme: neutral graphite surfaces (NOT blue-slate, NOT purple).
+   Shell: light = white bg / black text; dark = black bg / white text.
+   Primary actions are BLUE (design-theme ref: blue is the hero accent);
+   color lives in the BOXES too: every card/panel carries one of five
+   box tints — purple, orange, pink, blue, green (.box-* utilities).
+   Page carries soft blue glow washes, top and bottom, like the ref.
    Glass: cards/panels use .glass — translucent surface + backdrop blur.
-   Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain/accent hover
+   Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain hover
    Motion: NONE. The UI must feel instant — hover is a color swap, not a
    movement. No entrance animations, no staggers, no GSAP.
    ------------------------------------------------------------------ */
 :root {
-  --c-primary: 255 255 255;      /* page surface (theme backdrop) */
-  --c-secondary: 248 250 252;    /* soft surface / elevated fills (#F8FAFC) */
-  --c-accent: 37 99 235;         /* Royal Blue 600 (#2563EB) */
-  --c-accent-light: 191 219 254; /* Soft Blue glow (Blue 200) */
-  --c-text-main: 15 23 42;       /* Slate 900 */
-  --c-text-muted: 100 116 139;   /* Slate 500 */
-  --c-border: 226 232 240;       /* Slate 200 */
-  --c-muted: 241 245 249;        /* subtle fills (Slate 100) */
-  --c-on-accent: 255 255 255;    /* text on accent fills */
-  /* Glass: translucent white card over the violet-tinted page gradient */
+  --c-primary: 255 255 255;      /* page surface — white */
+  --c-secondary: 245 245 245;    /* soft neutral surface */
+  --c-accent: 37 99 235;         /* primary action — royal blue (light) */
+  --c-accent-light: 191 219 254; /* soft blue glow */
+  --c-text-main: 0 0 0;          /* black text */
+  --c-text-muted: 113 113 122;   /* neutral grey */
+  --c-border: 228 228 231;       /* neutral border */
+  --c-muted: 244 244 245;        /* subtle fills */
+  --c-on-accent: 255 255 255;    /* white text on blue actions */
+  /* Box palette (light) — the five card colors */
+  --box-purple: 124 58 237;
+  --box-orange: 234 88 12;
+  --box-pink: 219 39 119;
+  --box-blue: 37 99 235;
+  --box-green: 5 150 105;
+  --box-tint-alpha: 0.08;
+  /* Glass: translucent white card over the neutral page gradient */
   --c-glass-bg: 255 255 255;     /* card fill at --glass-alpha opacity */
   --glass-alpha: 0.72;
   --glass-border: 255 255 255;   /* border at 60% alpha (highlight edge) */
   --glass-blur: 14px;
-  --shadow-premium: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-premium-lg: 0 4px 12px -2px rgba(15, 23, 42, 0.12);
+  --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
 }
 
 .dark {
-  /* Neutral graphite night surface — accent carries the brand color */
-  --c-primary: 17 17 23;         /* near-black graphite */
-  --c-secondary: 28 28 37;       /* graphite elevated */
-  --c-accent: 59 130 246;        /* Blue 500 — readable on dark */
-  --c-accent-light: 30 58 138;   /* Blue 900 glow */
-  --c-text-main: 241 245 249;    /* Slate 100 */
-  --c-text-muted: 148 163 184;   /* Slate 400 */
-  --c-border: 45 45 58;          /* graphite border */
-  --c-muted: 28 28 37;           /* subtle fills */
-  --c-on-accent: 15 23 42;       /* dark text on light-blue fills */
-  /* Glass: translucent graphite card over the blue night gradient */
-  --c-glass-bg: 28 28 37;
+  /* Monochrome night — black surface, white text, white actions */
+  --c-primary: 0 0 0;            /* true black */
+  --c-secondary: 24 24 27;       /* elevated neutral */
+  --c-accent: 96 165 250;        /* primary action — bright blue (dark) */
+  --c-accent-light: 30 58 138;   /* deep blue glow */
+  --c-text-main: 255 255 255;    /* white text */
+  --c-text-muted: 161 161 170;   /* neutral grey */
+  --c-border: 39 39 42;          /* neutral border */
+  --c-muted: 24 24 27;           /* subtle fills */
+  --c-on-accent: 255 255 255;    /* white text on blue actions */
+  /* Box palette (dark) — brighter so tints read on black */
+  --box-purple: 167 139 250;
+  --box-orange: 251 146 60;
+  --box-pink: 244 114 182;
+  --box-blue: 96 165 250;
+  --box-green: 52 211 153;
+  --box-tint-alpha: 0.10;
+  /* Glass: translucent neutral card over the black gradient */
+  --c-glass-bg: 24 24 27;
   --glass-alpha: 0.55;
-  --glass-border: 59 130 246;    /* faint blue edge highlight */
+  --glass-border: 255 255 255;   /* faint white edge highlight */
   --glass-blur: 14px;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.55);
@@ -59,6 +76,37 @@
   border-color: rgb(var(--c-glass-border) / 0.28);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+}
+
+/* Colored boxes — every card/panel carries one of five tints:
+   purple, orange, pink, blue, green (like the design-theme reference:
+   the card's BORDER is the color — a shaded tone — not white). The tint
+   also paints as a translucent layer over the glass fill, and the hue
+   runs as a strong 3px left bar. Pair with .glass. */
+.box-purple {
+  border-color: rgb(var(--box-purple) / 0.45);
+  border-left: 3px solid rgb(var(--box-purple));
+  background-image: linear-gradient(rgb(var(--box-purple) / var(--box-tint-alpha)), rgb(var(--box-purple) / var(--box-tint-alpha)));
+}
+.box-orange {
+  border-color: rgb(var(--box-orange) / 0.45);
+  border-left: 3px solid rgb(var(--box-orange));
+  background-image: linear-gradient(rgb(var(--box-orange) / var(--box-tint-alpha)), rgb(var(--box-orange) / var(--box-tint-alpha)));
+}
+.box-pink {
+  border-color: rgb(var(--box-pink) / 0.45);
+  border-left: 3px solid rgb(var(--box-pink));
+  background-image: linear-gradient(rgb(var(--box-pink) / var(--box-tint-alpha)), rgb(var(--box-pink) / var(--box-tint-alpha)));
+}
+.box-blue {
+  border-color: rgb(var(--box-blue) / 0.45);
+  border-left: 3px solid rgb(var(--box-blue));
+  background-image: linear-gradient(rgb(var(--box-blue) / var(--box-tint-alpha)), rgb(var(--box-blue) / var(--box-tint-alpha)));
+}
+.box-green {
+  border-color: rgb(var(--box-green) / 0.45);
+  border-left: 3px solid rgb(var(--box-green));
+  background-image: linear-gradient(rgb(var(--box-green) / var(--box-tint-alpha)), rgb(var(--box-green) / var(--box-tint-alpha)));
 }
 
 @layer base {
@@ -75,10 +123,12 @@
     overflow: hidden;
   }
   /* Glass needs a tinted page to glow through — never flat white/black.
+     Blue glow washes top + bottom, like the design-theme reference.
      Tokens swap per mode, so one rule covers light AND dark. */
   html {
     background-image:
-      radial-gradient(120% 90% at 50% -10%, rgb(var(--c-accent) / 0.14), transparent 60%),
+      radial-gradient(120% 80% at 50% -10%, rgb(var(--c-accent) / 0.22), transparent 55%),
+      radial-gradient(130% 70% at 50% 112%, rgb(var(--c-accent) / 0.16), transparent 60%),
       linear-gradient(to bottom, rgb(var(--c-primary)), rgb(var(--c-secondary)));
   }
   body {

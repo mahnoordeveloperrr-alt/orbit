@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 /**
  * 🆕 First-run welcome — shows ONCE (flag in chrome.storage.local, mirrored to
@@ -37,7 +37,7 @@ export default function WelcomeCard({ onQuickSave }) {
   if (!visible) return null;
 
   return (
-    <div className="relative z-10 mb-2 rounded-[14px] border border-blue-200 bg-blue-50/90 dark:bg-secondary p-3.5">
+    <div className="glass box-purple relative z-10 mb-2 rounded-[14px] border p-3.5">
       <button
         onClick={dismiss}
         title="Don't show again"
@@ -51,8 +51,9 @@ export default function WelcomeCard({ onQuickSave }) {
       </p>
       <button
         onClick={handleSave}
-        className="mt-2.5 w-full bg-accent hover:bg-blue-700 text-onAccent text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors"
+        className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-gradient-to-b from-violet-500 to-violet-700 hover:from-violet-400 hover:to-violet-600 text-white text-sm font-semibold px-3 py-2 rounded-[10px] shadow-md shadow-violet-900/40 transition-colors"
       >
+        <Save size={14} />
         Save My Current Tabs
       </button>
       <p className="text-[11px] text-textMuted mt-2 leading-relaxed">

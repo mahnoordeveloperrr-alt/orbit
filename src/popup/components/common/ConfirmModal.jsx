@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X, Check, Trash2 } from 'lucide-react';
 
 // Task 11: every destructive action gets a real dialog — never instant loss.
 // Confirm copy follows the spec: "Delete session? [Cancel] [Move to Trash]".
@@ -35,15 +35,17 @@ export default function ConfirmModal({
         <div className="flex gap-2 mt-4">
           <button
             onClick={onCancel}
-            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-textMuted bg-muted hover:bg-borderLight/60 transition-colors"
+            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-textMuted bg-muted hover:bg-borderLight/60 transition-colors flex items-center justify-center gap-1.5"
           >
-            {cancelLabel}
+            <X size={13} /> {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white transition-colors shadow-sm ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-accent hover:bg-blue-700'}`}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1.5 ${
+              danger ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-b from-violet-500 to-violet-700 hover:from-violet-400 hover:to-violet-600'
+            }`}
           >
-            {confirmLabel}
+            {danger ? <Trash2 size={13} /> : <Check size={13} />} {confirmLabel}
           </button>
         </div>
       </div>
