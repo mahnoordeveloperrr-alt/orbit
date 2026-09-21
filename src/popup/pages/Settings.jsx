@@ -181,7 +181,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
 
   if (!settings) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200 p-5 flex flex-col relative overflow-hidden">
+      <div className="w-full h-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 p-5 flex flex-col relative overflow-hidden">
         <Header onBack={onBack} />
         <div className="flex-1 flex items-center justify-center text-textMuted text-sm">Loading settings…</div>
       </div>
@@ -189,8 +189,8 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-violet-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+    <div className="w-full h-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
 
       <Header onBack={onBack} />
 
@@ -214,7 +214,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
               <select
                 value={settings.autoSaveFreqSec}
                 onChange={(e) => update({ autoSaveFreqSec: Number(e.target.value) })}
-                className="text-xs rounded-lg border border-violet-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-violet-800 dark:text-violet-300 font-medium focus:outline-none"
+                className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
               >
                 {FREQ_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -275,7 +275,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <select
               value={settings.maxRecoveryPoints}
               onChange={(e) => update({ maxRecoveryPoints: Number(e.target.value) })}
-              className="text-xs rounded-lg border border-violet-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-violet-800 dark:text-violet-300 font-medium focus:outline-none"
+              className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
             >
               {RING_OPTIONS.map(n => <option key={n} value={n}>{n} points</option>)}
             </select>
@@ -285,7 +285,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <select
               value={settings.trashRetentionDays}
               onChange={(e) => update({ trashRetentionDays: Number(e.target.value) })}
-              className="text-xs rounded-lg border border-violet-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-violet-800 dark:text-violet-300 font-medium focus:outline-none"
+              className="text-xs rounded-lg border border-blue-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-blue-800 dark:text-blue-300 font-medium focus:outline-none"
             >
               {RETENTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -294,13 +294,13 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setConfirm({ type: 'recovery' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-xs font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
             >
               <Eraser size={12} /> Clear recovery data
             </button>
             <button
               onClick={() => setConfirm({ type: 'trash' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-xs font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
             >
               <Trash2 size={12} /> Clear trash
             </button>
@@ -351,14 +351,14 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <button
               onClick={handleExport}
               disabled={backupBusy}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
             >
               <Download size={14} /> Export all data
             </button>
             <button
               onClick={handleImport}
               disabled={backupBusy}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
             >
               <Upload size={14} /> Import data
             </button>
@@ -405,13 +405,13 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => onOpenLogin?.('login')}
-                className="px-3 py-2 rounded-lg bg-violet-700 dark:bg-violet-500 text-white text-sm font-semibold hover:bg-violet-800 dark:hover:bg-violet-400 transition-colors shadow-sm"
+                className="px-3 py-2 rounded-lg bg-blue-700 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-800 dark:hover:bg-blue-400 transition-colors shadow-sm"
               >
                 Sign in
               </button>
               <button
                 onClick={() => onOpenLogin?.('register')}
-                className="px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-semibold hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+                className="px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
               >
                 Create account
               </button>
@@ -438,10 +438,10 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
                 ['Restore session', 'Alt+Shift+R'],
                 ['Open Orbitabs', 'Alt+Shift+O'],
               ].map(([label, keys]) => (
-                <tr key={label} className="border-b border-violet-50 last:border-0">
+                <tr key={label} className="border-b border-blue-50 last:border-0">
                   <td className="py-1.5 text-textMain font-medium">{label}</td>
                   <td className="py-1.5 text-right">
-                    <kbd className="px-2 py-0.5 rounded bg-violet-50 dark:bg-secondary border border-violet-200 dark:border-borderLight text-violet-800 dark:text-violet-300 font-mono text-[11px]">{keys}</kbd>
+                    <kbd className="px-2 py-0.5 rounded bg-blue-50 dark:bg-secondary border border-blue-200 dark:border-borderLight text-blue-800 dark:text-blue-300 font-mono text-[11px]">{keys}</kbd>
                   </td>
                 </tr>
               ))}
@@ -452,7 +452,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           </p>
           <button
             onClick={openShortcutSettings}
-            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-xs font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
           >
             <Keyboard size={12} /> Change in Chrome's shortcut settings
           </button>
@@ -462,19 +462,19 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
         <Section icon={<Trash2 size={16} />} title="Data Management">
           <div className="grid grid-cols-2 gap-2">
             <button onClick={handleExport} disabled={backupBusy}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors disabled:opacity-50">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
               <Download size={13} /> Export
             </button>
             <button onClick={handleImport} disabled={backupBusy}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors disabled:opacity-50">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
               <Upload size={13} /> Import
             </button>
             <button onClick={() => setConfirm({ type: 'trash' })}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
               <Trash2 size={13} /> Empty Trash
             </button>
             <button onClick={() => setConfirm({ type: 'recovery' })}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
               <History size={13} /> Clear recovery history
             </button>
           </div>
@@ -505,7 +505,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             </div>
             <button
               onClick={onCycleTheme}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
             >
               {theme === 'dark' ? '🌙 Dark' : theme === 'light' ? '☀️ Light' : '💻 System'}
             </button>
@@ -513,7 +513,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
         </Section>
 
         {/* ═══════════ ℹ️ ABOUT ═══════════ */}
-        <Section icon={<span className="text-violet-600 dark:text-violet-400">ℹ️</span>} title="About">
+        <Section icon={<span className="text-blue-600 dark:text-blue-400">ℹ️</span>} title="About">
           <div className="space-y-1">
             <p className="text-sm font-medium text-textMain">Orbitabs v1.2.0</p>
             <p className="text-xs text-textMuted">
@@ -568,11 +568,11 @@ function Header({ onBack }) {
     <div className="flex items-center gap-3 mb-5 relative z-10">
       <button
         onClick={onBack}
-        className="p-2 rounded-xl bg-white/80 hover:bg-white text-violet-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-violet-300 shadow-sm transition-colors"
+        className="p-2 rounded-xl bg-white/80 hover:bg-white text-blue-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-blue-300 shadow-sm transition-colors"
       >
         <ArrowLeft size={18} />
       </button>
-      <h1 className="text-xl font-bold text-violet-800 dark:text-slate-100 tracking-tight">Settings</h1>
+      <h1 className="text-xl font-bold text-blue-800 dark:text-slate-100 tracking-tight">Settings</h1>
     </div>
   );
 }
@@ -580,10 +580,10 @@ function Header({ onBack }) {
 // Reusable Section component
 function Section({ icon, title, children }) {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-violet-100 dark:bg-secondary/90 dark:border-borderLight shadow-sm">
+    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-blue-100 dark:bg-secondary/90 dark:border-borderLight shadow-sm">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-violet-600 dark:text-violet-400">{icon}</span>
-        <h2 className="text-sm font-bold text-violet-800 dark:text-violet-300 uppercase tracking-wide">{title}</h2>
+        <span className="text-blue-600 dark:text-blue-400">{icon}</span>
+        <h2 className="text-sm font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide">{title}</h2>
       </div>
       {children}
     </div>
@@ -606,13 +606,13 @@ function Row({ title, desc, children }) {
 // Two-option segmented control (scope, restore behavior)
 function Segmented({ value, options, onChange }) {
   return (
-    <div className="flex rounded-lg border border-violet-200 dark:border-borderLight overflow-hidden">
+    <div className="flex rounded-lg border border-blue-200 dark:border-borderLight overflow-hidden">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            value === o.value ? 'bg-violet-600 dark:bg-violet-500 text-white' : 'bg-white dark:bg-secondary text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-muted'
+            value === o.value ? 'bg-blue-600 dark:bg-blue-500 text-white' : 'bg-white dark:bg-secondary text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-muted'
           }`}
         >
           {o.label}
@@ -628,7 +628,7 @@ function Toggle({ checked, onChange }) {
     <button
       onClick={onChange}
       className={`relative w-11 h-6 rounded-full transition-colors ${
-        checked ? 'bg-violet-600 dark:bg-violet-500' : 'bg-gray-300 dark:bg-secondary'
+        checked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-secondary'
       }`}
     >
       <span
@@ -646,10 +646,10 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
     return <p className="text-xs text-textMuted italic">Open the extension in Chrome to see recovery history</p>;
   }
   return (
-    <div className="mt-3 pt-3 border-t border-violet-50">
+    <div className="mt-3 pt-3 border-t border-blue-50">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Recovery history</p>
-        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium">
+        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
           <RefreshCw size={11} /> Refresh
         </button>
       </div>
@@ -674,7 +674,7 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
                 </span>
                 <button
                   onClick={() => onRestore(i)}
-                  className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                 >
                   Restore
                 </button>
@@ -691,8 +691,8 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="bg-violet-50 dark:bg-violet-950/40 rounded-lg p-2 text-center">
-      <p className="text-sm font-bold text-violet-700 dark:text-violet-300">{value}</p>
+    <div className="bg-blue-50 dark:bg-blue-950/40 rounded-lg p-2 text-center">
+      <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{value}</p>
       <p className="text-[10px] text-textMuted uppercase">{label}</p>
     </div>
   );

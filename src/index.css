@@ -6,8 +6,8 @@
    ORBITABS DESIGN SYSTEM
    Font: Inter (UI + headings — headings are just heavier weights)
    Radius scale: cards 14px · controls 10px · pills full
-   Accent: Violet #7c3aed (light) / #a78bfa (dark readability)
-   Dark theme: violet-black (purple-tinted) — NOT blue-slate.
+   Accent: Royal Blue #2563eb (light) / #3b82f6 (dark readability)
+   Dark theme: neutral graphite surfaces (NOT blue-slate, NOT purple).
    Glass: cards/panels use .glass — translucent surface + backdrop blur.
    Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain/accent hover
    Motion: NONE. The UI must feel instant — hover is a color swap, not a
@@ -15,9 +15,9 @@
    ------------------------------------------------------------------ */
 :root {
   --c-primary: 255 255 255;      /* page surface (theme backdrop) */
-  --c-secondary: 245 243 255;    /* soft surface / elevated fills (Violet 50) */
-  --c-accent: 124 58 237;        /* Violet 600 */
-  --c-accent-light: 221 214 254; /* Soft Violet glow (Violet 200) */
+  --c-secondary: 248 250 252;    /* soft surface / elevated fills (#F8FAFC) */
+  --c-accent: 37 99 235;         /* Royal Blue 600 (#2563EB) */
+  --c-accent-light: 191 219 254; /* Soft Blue glow (Blue 200) */
   --c-text-main: 15 23 42;       /* Slate 900 */
   --c-text-muted: 100 116 139;   /* Slate 500 */
   --c-border: 226 232 240;       /* Slate 200 */
@@ -28,25 +28,25 @@
   --glass-alpha: 0.72;
   --glass-border: 255 255 255;   /* border at 60% alpha (highlight edge) */
   --glass-blur: 14px;
-  --shadow-premium: 0 1px 2px rgba(76, 29, 149, 0.06);
-  --shadow-premium-lg: 0 4px 12px -2px rgba(76, 29, 149, 0.14);
+  --shadow-premium: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-premium-lg: 0 4px 12px -2px rgba(15, 23, 42, 0.12);
 }
 
 .dark {
-  /* Violet-black night surface (purple-tinted, not blue-slate) */
-  --c-primary: 18 13 30;         /* near-black plum */
-  --c-secondary: 30 23 48;       /* plum elevated */
-  --c-accent: 167 139 250;       /* Violet 400 — readable on dark */
-  --c-accent-light: 91 33 182;   /* Violet 900 glow */
+  /* Neutral graphite night surface — accent carries the brand color */
+  --c-primary: 17 17 23;         /* near-black graphite */
+  --c-secondary: 28 28 37;       /* graphite elevated */
+  --c-accent: 59 130 246;        /* Blue 500 — readable on dark */
+  --c-accent-light: 30 58 138;   /* Blue 900 glow */
   --c-text-main: 241 245 249;    /* Slate 100 */
-  --c-text-muted: 165 160 180;   /* muted plum-grey */
-  --c-border: 56 46 76;          /* plum border */
-  --c-muted: 30 23 48;           /* subtle fills */
-  --c-on-accent: 15 23 42;       /* dark text on light-violet fills */
-  /* Glass: translucent plum card over the violet night gradient */
-  --c-glass-bg: 30 23 48;
+  --c-text-muted: 148 163 184;   /* Slate 400 */
+  --c-border: 45 45 58;          /* graphite border */
+  --c-muted: 28 28 37;           /* subtle fills */
+  --c-on-accent: 15 23 42;       /* dark text on light-blue fills */
+  /* Glass: translucent graphite card over the blue night gradient */
+  --c-glass-bg: 28 28 37;
   --glass-alpha: 0.55;
-  --glass-border: 167 139 250;   /* faint violet edge highlight */
+  --glass-border: 59 130 246;    /* faint blue edge highlight */
   --glass-blur: 14px;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.55);

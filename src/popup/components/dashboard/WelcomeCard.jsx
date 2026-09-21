@@ -37,7 +37,7 @@ export default function WelcomeCard({ onQuickSave }) {
   if (!visible) return null;
 
   return (
-    <div className="relative z-10 mb-2 rounded-[14px] border border-violet-200 bg-violet-50/90 dark:bg-secondary p-3.5">
+    <div className="relative z-10 mb-2 rounded-[14px] border border-blue-200 bg-blue-50/90 dark:bg-secondary p-3.5">
       <button
         onClick={dismiss}
         title="Don't show again"
@@ -51,7 +51,7 @@ export default function WelcomeCard({ onQuickSave }) {
       </p>
       <button
         onClick={handleSave}
-        className="mt-2.5 w-full bg-accent hover:bg-violet-700 text-onAccent text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors"
+        className="mt-2.5 w-full bg-accent hover:bg-blue-700 text-onAccent text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors"
       >
         Save My Current Tabs
       </button>

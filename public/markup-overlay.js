@@ -531,7 +531,7 @@
 
   function drawSelectionChrome(a) {
     ctx.save();
-    ctx.strokeStyle = '#7c3aed';
+    ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 4]);
     const r = a.type === 'pen' ? penBounds(a) : a.rect;
@@ -540,7 +540,7 @@
     ctx.setLineDash([]);
     if (a.type === 'sticky') {
       const h = seHandleRect(a);
-      ctx.fillStyle = '#7c3aed';
+      ctx.fillStyle = '#2563eb';
       ctx.strokeStyle = '#fff';
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(h.x, h.y, h.w, h.h, 2); else ctx.rect(h.x, h.y, h.w, h.h);

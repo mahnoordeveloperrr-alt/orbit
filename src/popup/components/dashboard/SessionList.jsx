@@ -230,7 +230,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleTrashRestore(uid)}
-                      className="flex items-center gap-1 text-accent hover:text-violet-700 text-sm font-medium px-2"
+                      className="flex items-center gap-1 text-accent hover:text-blue-700 text-sm font-medium px-2"
                     >
                       <RotateCcw size={14} /> Restore
                     </button>
@@ -404,7 +404,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                 <button
                   onClick={() => restoreTabs(session)}
                   title="Reopen every saved tab, window and group from this session"
-                  className="ml-1 flex items-center gap-1.5 bg-accent hover:bg-violet-700 dark:hover:bg-violet-300 text-onAccent text-xs font-semibold px-4 py-2 rounded-[10px] shadow-sm transition-colors flex-shrink-0"
+                  className="ml-1 flex items-center gap-1.5 bg-accent hover:bg-blue-700 dark:hover:bg-blue-300 text-onAccent text-xs font-semibold px-4 py-2 rounded-[10px] shadow-sm transition-colors flex-shrink-0"
                 >
                   <RotateCcw size={13} /> Restore
                 </button>

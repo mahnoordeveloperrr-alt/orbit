@@ -25,9 +25,9 @@
   // Compact fill palette: yellow red green blue black white (+ the 🎨 picker
   // in the UI covers everything else). Storage keeps ANY valid hex, so older
   // marks with retired colors still render.
-  const COLORS = ['#facc15', '#ef4444', '#22c55e', '#8b5cf6', '#111827', '#f8fafc'];
+  const COLORS = ['#facc15', '#ef4444', '#22c55e', '#3b82f6', '#111827', '#f8fafc'];
   // Ink palette — TEXT color, compact: auto + these 5.
-  const INK_COLORS = ['#111827', '#f8fafc', '#ef4444', '#8b5cf6', '#22c55e'];
+  const INK_COLORS = ['#111827', '#f8fafc', '#ef4444', '#3b82f6', '#22c55e'];
   const MAX_PER_URL = 200;      // per-page cap — oldest marks fall off first
   const MAX_TEXT_LEN = 500;
   const MIN_W = 20;             // resize floor — a mark can never collapse to nothing

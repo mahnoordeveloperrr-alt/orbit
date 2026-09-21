@@ -165,14 +165,14 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
   useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-violet-50/80 dark:from-primary dark:to-secondary/70 p-5 flex flex-col relative overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-b from-primary to-blue-50/80 dark:from-primary dark:to-secondary/70 p-5 flex flex-col relative overflow-hidden">
 
       {/* ── Header: logo + wordmark + tagline, theme + cloud on the right ── */}
       <div className="flex justify-between items-center mb-1.5 relative z-10">
         <div className="flex items-center gap-2.5">
           <Logo size={26} />
           <div>
-            <h1 className="text-lg font-bold text-violet-800 dark:text-textMain tracking-tight leading-none">
+            <h1 className="text-lg font-bold text-blue-800 dark:text-textMain tracking-tight leading-none">
               Orbitabs
             </h1>
             <p className="text-[11px] text-textMuted mt-0.5 leading-none">
@@ -238,7 +238,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
               <button
                 onClick={handleQuickSave}
                 title="Save every open tab, group and window right now"
-                className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-violet-700 dark:hover:bg-violet-300 text-onAccent font-semibold text-sm px-5 py-2.5 rounded-[10px] shadow-md transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-blue-700 dark:hover:bg-blue-300 text-onAccent font-semibold text-sm px-5 py-2.5 rounded-[10px] shadow-md transition-colors"
               >
                 <Zap size={15} /> Save Current Tabs
               </button>
@@ -326,7 +326,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                   </p>
                   <button
                     onClick={handleQuickSave}
-                    className="bg-accent hover:bg-violet-700 text-onAccent text-sm font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors"
+                    className="bg-accent hover:bg-blue-700 text-onAccent text-sm font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors"
                   >
                     <span className="flex items-center gap-1.5"><Zap size={14} /> Save Current Tabs</span>
                   </button>

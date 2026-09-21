@@ -564,7 +564,7 @@ console.log('\n═══ C. Settings page UI ═══\n');
   ok('C1: manifest carries the Open Orbitabs command', !!manifest.commands['_execute_action'] && manifest.commands['_execute_action'].suggested_key.default === 'Alt+Shift+O');
 
   // Toggle auto-save → SET_SETTINGS message with the patch
-  const toggles = [...document.querySelectorAll('button')].filter(b => b.className.includes('rounded-full') && (b.className.includes('bg-violet-600') || b.className.includes('bg-gray-300')));
+  const toggles = [...document.querySelectorAll('button')].filter(b => b.className.includes('rounded-full') && (b.className.includes('bg-blue-600') || b.className.includes('bg-gray-300')));
   await act(async () => { fire(toggles[0], 'click'); });
   await tick(60);
   ok('C2: toggling Auto-save sends SET_SETTINGS through the worker', sent.some(m => m?.type === 'SET_SETTINGS' && m.patch && 'autoSave' in m.patch));
