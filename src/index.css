@@ -92,10 +92,34 @@
 }
 
 /* Colored boxes — every card/panel carries one of five hues:
-   purple, orange, pink, blue, green. The BORDER is a shaded tone of the
-   hue (never white) with a strong 3px left bar; the FILL is a per-mode
-   tone — faint tint over light glass, deep dark hue on black (the
-   ui/ reference look). Pair with .glass. */
+   purple, orange, pink, blue, green. Like the ui/ reference:
+   • a BRIGHT solid color strip runs across the top of the box,
+   • the BORDER is a shaded tone of the hue (never white) with a
+     strong 3px left bar,
+   • the FILL is a per-mode tone — faint tint over light glass, deep
+     dark hue on black.
+   The strip is a ::before (absolute, top corners rounded to match the
+   card) — deliberately NOT overflow:hidden, which would clip the card's
+   ⋯ dropdown menu. Pair with .glass. */
+.box-purple, .box-orange, .box-pink, .box-blue, .box-green {
+  position: relative;
+}
+.box-purple::before, .box-orange::before, .box-pink::before,
+.box-blue::before, .box-green::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  border-radius: 13px 13px 0 0;
+  pointer-events: none;
+}
+.box-purple::before  { background: rgb(var(--box-purple)); }
+.box-orange::before  { background: rgb(var(--box-orange)); }
+.box-pink::before    { background: rgb(var(--box-pink)); }
+.box-blue::before    { background: rgb(var(--box-blue)); }
+.box-green::before   { background: rgb(var(--box-green)); }
 .box-purple {
   border-color: rgb(var(--box-purple) / 0.45);
   border-left: 3px solid rgb(var(--box-purple));

@@ -292,7 +292,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                     )}
                     {/* AUTO badge — maintained by the background auto-save worker */}
                     {session.isAutoSave && (
-                      <span className="text-[10px] font-bold text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-[10px] font-bold text-white bg-accent border border-white/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
                         AUTO
                       </span>
                     )}
@@ -304,11 +304,22 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                     )}
                   </div>
 
-                  {/* Summary line — "32 tabs · 2 windows · 4 groups" + "Saved 12 min ago" */}
+                  {/* Summary line — "32 tabs · 2 windows · 4 groups" + "Saved 12 min ago".
+                     The time wears the card's color as a chip (ui/ reference:
+                     small bright pills on the deep-dark box). */}
                   <div className="flex items-center gap-1.5 text-textMuted text-xs mt-0.5">
                     <span>{sessionSummary(session)}</span>
                     <span>·</span>
-                    <span>Saved {timeAgo(session.createdAt)}</span>
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-px rounded-full border"
+                      style={{
+                        color: `rgb(var(--box-${boxColor}))`,
+                        backgroundColor: `rgb(var(--box-${boxColor}) / 0.16)`,
+                        borderColor: `rgb(var(--box-${boxColor}) / 0.35)`,
+                      }}
+                    >
+                      Saved {timeAgo(session.createdAt)}
+                    </span>
                   </div>
 
                   {/* Chrome tab groups at a glance — color dot + title + count */}
