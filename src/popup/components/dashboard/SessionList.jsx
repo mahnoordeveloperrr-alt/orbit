@@ -468,14 +468,17 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
         );
       })}
 
-      {/* Trash entry — small muted row at the very bottom of the list */}
+      {/* Trash entry — the reference portrait layout's bottom orange panel:
+         a small box-orange bar with the colored strip, title left, hint right */}
       {sessions.length > 0 && (
         <button
           onClick={openTrash}
           title="Trash — deleted sessions, restorable for 30 days"
-          className="flex items-center gap-1.5 px-2 py-1 text-[11px] text-textMuted/70 hover:text-accent transition-colors"
+          className="w-full mt-2 flex items-center gap-2 glass box-orange rounded-[14px] border p-2.5 text-left hover:border-[rgb(var(--box-orange))] transition-colors"
         >
-          <Trash2 size={12} /> Trash
+          <Trash2 size={13} className="flex-shrink-0" style={{ color: 'rgb(var(--box-orange))' }} />
+          <span className="text-xs font-semibold text-textMain">Trash</span>
+          <span className="ml-auto text-[10px] text-textMuted">Deleted sessions · restorable 30 days</span>
         </button>
       )}
     </div>

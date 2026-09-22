@@ -21,6 +21,7 @@ import {
 import SessionList from '../components/dashboard/SessionList';
 import OrganizePanel from '../components/dashboard/OrganizePanel';
 import SaveSession from '../components/dashboard/SaveSession';
+import { BOX_GRADIENTS } from '../utils/boxColors';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Button from '../components/common/Button';
 import Logo from '../components/common/Logo';
@@ -203,7 +204,9 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
         </div>
       </div>
 
-      {/* 🆕 TASK 14: primary actions — Sessions | Organize | Settings */}
+      {/* 🆕 TASK 14: primary actions — pills LEFT + the ONE primary save button
+          RIGHT, on the same row (ui/ reference portrait layout: tab pills and
+          the colored action share the top row; no separate save panel). */}
       <div className="flex items-center gap-1.5 mb-3 relative z-10">
         <button
           onClick={() => setActiveView('sessions')}
@@ -223,6 +226,13 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
         >
           <SettingsIcon size={12} /> Settings
         </button>
+        <button
+          onClick={handleQuickSave}
+          title="Save every open tab, group and window right now"
+          className={`ml-auto flex items-center gap-1.5 bg-gradient-to-b text-onAccent text-xs font-semibold px-3.5 py-1.5 rounded-[10px] shadow-md transition-colors ${BOX_GRADIENTS.green}`}
+        >
+          <Zap size={13} /> Save
+        </button>
       </div>
 
       {/* min-h-0 is REQUIRED: without it a flex child defaults to min-height:auto,
@@ -230,19 +240,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
           scroll (Settings was unreachable past the first screen). */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10">
         {activeView === 'sessions' && (
-          <>
-            <WelcomeCard onQuickSave={handleQuickSave} />
-
-            {/* ── Save bar: the ONE obvious primary action ── */}
-            <div className="w-full p-3 rounded-[14px] bg-secondary/60 border border-accent/35 shadow-premium mb-2 relative z-10">
-              <button
-                onClick={handleQuickSave}
-                title="Save every open tab, group and window right now"
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-onAccent font-semibold text-sm px-5 py-2.5 rounded-[10px] shadow-lg shadow-blue-900/40 transition-colors"
-              >
-                <Zap size={15} /> Save Current Tabs
-              </button>
-            </div>
+          <>            <WelcomeCard onQuickSave={handleQuickSave} />
 
             {/* Clear status line: named save + scope toggle + honest auto-save dot */}
             <div className="flex items-center justify-between gap-2 mb-2 px-1 relative z-10">
