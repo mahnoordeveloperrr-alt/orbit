@@ -26,13 +26,19 @@
   --c-border: 228 228 231;       /* neutral border */
   --c-muted: 244 244 245;        /* subtle fills */
   --c-on-accent: 255 255 255;    /* white text on blue actions */
-  /* Box palette (light) — the five card colors */
+  /* Box palette (light) — the five card colors. Fill = same hue, faint tint
+     over the white glass. */
   --box-purple: 124 58 237;
   --box-orange: 234 88 12;
   --box-pink: 219 39 119;
   --box-blue: 37 99 235;
   --box-green: 5 150 105;
-  --box-tint-alpha: 0.08;
+  --box-fill-purple: 124 58 237;
+  --box-fill-orange: 234 88 12;
+  --box-fill-pink: 219 39 119;
+  --box-fill-blue: 37 99 235;
+  --box-fill-green: 5 150 105;
+  --box-fill-alpha: 0.08;
   /* Glass: translucent white card over the neutral page gradient */
   --c-glass-bg: 255 255 255;     /* card fill at --glass-alpha opacity */
   --glass-alpha: 0.72;
@@ -53,13 +59,20 @@
   --c-border: 39 39 42;          /* neutral border */
   --c-muted: 24 24 27;           /* subtle fills */
   --c-on-accent: 255 255 255;    /* white text on blue actions */
-  /* Box palette (dark) — brighter so tints read on black */
+  /* Box palette (dark) — the ui/ reference look: black page carries DEEP
+     DARK per-hue fills (wine/plum/blue/green/orange-brown), while edges
+     (border + left bar) stay bright so color reads against black. */
   --box-purple: 167 139 250;
   --box-orange: 251 146 60;
   --box-pink: 244 114 182;
   --box-blue: 96 165 250;
   --box-green: 52 211 153;
-  --box-tint-alpha: 0.10;
+  --box-fill-purple: 72 0 48;
+  --box-fill-orange: 72 48 0;
+  --box-fill-pink: 48 0 48;
+  --box-fill-blue: 0 0 72;
+  --box-fill-green: 0 48 0;
+  --box-fill-alpha: 0.88;
   /* Glass: translucent neutral card over the black gradient */
   --c-glass-bg: 24 24 27;
   --glass-alpha: 0.55;
@@ -78,35 +91,35 @@
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
 }
 
-/* Colored boxes — every card/panel carries one of five tints:
-   purple, orange, pink, blue, green (like the design-theme reference:
-   the card's BORDER is the color — a shaded tone — not white). The tint
-   also paints as a translucent layer over the glass fill, and the hue
-   runs as a strong 3px left bar. Pair with .glass. */
+/* Colored boxes — every card/panel carries one of five hues:
+   purple, orange, pink, blue, green. The BORDER is a shaded tone of the
+   hue (never white) with a strong 3px left bar; the FILL is a per-mode
+   tone — faint tint over light glass, deep dark hue on black (the
+   ui/ reference look). Pair with .glass. */
 .box-purple {
   border-color: rgb(var(--box-purple) / 0.45);
   border-left: 3px solid rgb(var(--box-purple));
-  background-image: linear-gradient(rgb(var(--box-purple) / var(--box-tint-alpha)), rgb(var(--box-purple) / var(--box-tint-alpha)));
+  background-image: linear-gradient(rgb(var(--box-fill-purple) / var(--box-fill-alpha)), rgb(var(--box-fill-purple) / var(--box-fill-alpha)));
 }
 .box-orange {
   border-color: rgb(var(--box-orange) / 0.45);
   border-left: 3px solid rgb(var(--box-orange));
-  background-image: linear-gradient(rgb(var(--box-orange) / var(--box-tint-alpha)), rgb(var(--box-orange) / var(--box-tint-alpha)));
+  background-image: linear-gradient(rgb(var(--box-fill-orange) / var(--box-fill-alpha)), rgb(var(--box-fill-orange) / var(--box-fill-alpha)));
 }
 .box-pink {
   border-color: rgb(var(--box-pink) / 0.45);
   border-left: 3px solid rgb(var(--box-pink));
-  background-image: linear-gradient(rgb(var(--box-pink) / var(--box-tint-alpha)), rgb(var(--box-pink) / var(--box-tint-alpha)));
+  background-image: linear-gradient(rgb(var(--box-fill-pink) / var(--box-fill-alpha)), rgb(var(--box-fill-pink) / var(--box-fill-alpha)));
 }
 .box-blue {
   border-color: rgb(var(--box-blue) / 0.45);
   border-left: 3px solid rgb(var(--box-blue));
-  background-image: linear-gradient(rgb(var(--box-blue) / var(--box-tint-alpha)), rgb(var(--box-blue) / var(--box-tint-alpha)));
+  background-image: linear-gradient(rgb(var(--box-fill-blue) / var(--box-fill-alpha)), rgb(var(--box-fill-blue) / var(--box-fill-alpha)));
 }
 .box-green {
   border-color: rgb(var(--box-green) / 0.45);
   border-left: 3px solid rgb(var(--box-green));
-  background-image: linear-gradient(rgb(var(--box-green) / var(--box-tint-alpha)), rgb(var(--box-green) / var(--box-tint-alpha)));
+  background-image: linear-gradient(rgb(var(--box-fill-green) / var(--box-fill-alpha)), rgb(var(--box-fill-green) / var(--box-fill-alpha)));
 }
 
 @layer base {
