@@ -137,7 +137,7 @@ await tick(120);
 const sessionCards = () => document.querySelectorAll('[class*="session-card-"]').length;
 ok('all 3 sessions render before search', sessionCards() === 3);
 
-const input = document.querySelector('input[placeholder^="Search sessions"]');
+const input = document.querySelector('input[placeholder^="Search saved sessions"]');
 ok('search input renders', !!input);
 if (!input) { console.log(`\n❌ SEARCH SMOKE: ${pass} passed, ${fail} failed\n`); process.exit(1); }
 

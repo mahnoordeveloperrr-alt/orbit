@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import Card from '../common/Card';
 import { dotClassFor } from '../../utils/groupColors';
-import { boxColorFor, BOX_GRADIENTS } from '../../utils/boxColors';
+import { boxColorFor } from '../../utils/boxColors';
 // 🆕 LOCAL-FIRST: trash/restore/purge operate on chrome.storage.local via store.js
 import {
   getTrash, restoreSession, purgeSession, emptyTrash, renameSession,
@@ -290,9 +290,10 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                         {session.name}
                       </h4>
                     )}
-                    {/* AUTO badge — maintained by the background auto-save worker */}
+                    {/* AUTO badge — maintained by the background auto-save worker.
+                        Gold (special state color): system-managed, not a user session. */}
                     {session.isAutoSave && (
-                      <span className="text-[10px] font-bold text-white bg-accent border border-white/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-[10px] font-bold text-[rgb(var(--box-yellow))] bg-[rgb(var(--box-yellow)/0.1)] border border-[rgb(var(--box-yellow)/0.3)] px-1.5 py-0.5 rounded-full flex-shrink-0">
                         AUTO
                       </span>
                     )}
@@ -310,12 +311,12 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   <div className="flex items-center gap-1.5 text-textMuted text-xs mt-0.5">
                     <span>{sessionSummary(session)}</span>
                     <span>·</span>
-                    <span
+                      <span
                       className="text-[10px] font-semibold px-1.5 py-px rounded-full border"
                       style={{
                         color: `rgb(var(--box-${boxColor}))`,
-                        backgroundColor: `rgb(var(--box-${boxColor}) / 0.16)`,
-                        borderColor: `rgb(var(--box-${boxColor}) / 0.35)`,
+                        backgroundColor: `rgb(var(--box-${boxColor}) / 0.12)`,
+                        borderColor: `rgb(var(--box-${boxColor}) / 0.3)`,
                       }}
                     >
                       Saved {timeAgo(session.createdAt)}
@@ -370,7 +371,7 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   {menuId === uniqueId && (
                     <div
                       ref={menuRef}
-                      className={`absolute right-0 z-30 w-40 bg-primary rounded-xl border border-borderLight shadow-premium-lg py-1 ${menuUp ? 'bottom-8' : 'top-8'}`}
+                      className={`absolute right-0 z-30 w-40 surface rounded-[10px] border border-borderLight shadow-premium-lg py-1 ${menuUp ? 'bottom-8' : 'top-8'}`}
                     >
                       <button
                         onClick={() => {
@@ -413,11 +414,12 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
                   )}
                 </div>
 
-                {/* THE action — obvious, always in the same place, wears the card's color */}
+                  {/* THE action — obvious, always in the same place.
+                     Green = Orbitabs primary per the spec (dark ink on neon). */}
                 <button
                   onClick={() => restoreTabs(session)}
                   title="Reopen every saved tab, window and group from this session"
-                  className={`ml-1 flex items-center gap-1.5 bg-gradient-to-b text-white text-xs font-semibold px-4 py-2 rounded-[10px] shadow-md transition-colors flex-shrink-0 ${BOX_GRADIENTS[boxColor]}`}
+                  className="ml-1 flex items-center gap-1.5 bg-accent text-accentInk hover:bg-accentDark text-xs font-semibold px-4 py-2 rounded-[10px] transition-colors flex-shrink-0"
                 >
                   <RotateCcw size={13} /> Restore
                 </button>
@@ -468,15 +470,15 @@ export default function SessionList({ sessions, onDelete, onRenamed, onRestoreRe
         );
       })}
 
-      {/* Trash entry — the reference portrait layout's bottom orange panel:
-         a small box-orange bar with the colored strip, title left, hint right */}
+      {/* Trash entry — orange accent panel (spec: orange = recovery/warning);
+         flat surface, thin border, compact one-row design */}
       {sessions.length > 0 && (
         <button
           onClick={openTrash}
           title="Trash — deleted sessions, restorable for 30 days"
-          className="w-full mt-2 flex items-center gap-2 glass box-orange rounded-[14px] border p-2.5 text-left hover:border-[rgb(var(--box-orange))] transition-colors"
+          className="w-full mt-2 flex items-center gap-2 surface box-orange rounded-[14px] border p-2.5 text-left hover:border-[rgb(var(--box-orange))] transition-colors"
         >
-          <Trash2 size={13} className="flex-shrink-0" style={{ color: 'rgb(var(--box-orange))' }} />
+          <Trash2 size={13} className="flex-shrink-0 text-box-orange" />
           <span className="text-xs font-semibold text-textMain">Trash</span>
           <span className="ml-auto text-[10px] text-textMuted">Deleted sessions · restorable 30 days</span>
         </button>

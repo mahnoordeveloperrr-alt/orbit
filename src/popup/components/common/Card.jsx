@@ -1,14 +1,17 @@
 import React from 'react';
 
-// Glass card: translucent surface + backdrop blur over the neutral page
-// gradient, subtle border + shadow, 14px radius. `color` picks one of the
-// five box tints (purple/orange/pink/blue/green) — the shell itself stays
-// monochrome; the color lives in the boxes. Hover deepens the shadow
-// slightly — a color/shadow change, never movement.
+// Session/panel card — the reference DNA: DARK INTERIOR + COLORFUL EDGE.
+// Flat surface fill, 1px border in the card's hue (subtle), 3px left bar,
+// and a very subtle outer glow in the same hue via the .box-glow-* CSS
+// utilities (single owner of the glow, spec §24: controlled, never neon).
+// 14px radius, hover deepens the shadow slightly — color/shadow only.
 export default function Card({ children, className = '', color = '' }) {
   const box = color ? `box-${color}` : '';
+  const glow = color ? `box-glow-${color}` : '';
   return (
-    <div className={`glass ${box} rounded-[14px] border shadow-premium hover:shadow-premium-lg transition-shadow duration-150 ${className}`}>
+    <div
+      className={`surface ${box} ${glow} rounded-[14px] border shadow-premium hover:shadow-premium-lg transition-shadow duration-150 ${className}`}
+    >
       {children}
     </div>
   );

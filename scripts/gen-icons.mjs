@@ -12,7 +12,7 @@
 //   Wordmark       = "Orbitabs" text, never outlined          — docs, store
 //   Heading font   = Inter 700; UI text = Inter 400/500/600
 //   Radius         = cards 14px · controls 10px · pills full
-//   Accent         = Royal Blue #a855f7 (light) / #e879f9 (dark)
+//   Accent         = brand magenta #FF00A8 → purple #A855F7 (box tokens)
 import { deflateSync } from 'zlib';
 import { writeFileSync, mkdirSync, copyFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -70,7 +70,7 @@ const png = (S, pixel) => {
 
 /* ------------------------------------------------------------------ *
  * Orbitabs mark
- * Rounded square, vertical gradient #a855f7 → #ec4899.
+ * Rounded square, vertical gradient #FF00A8 → #A855F7.
  * White orbit ring (radius .30) + white core planet + THREE small
  * white satellite dots riding the ring (tabs/groups, organized).
  * The three dots start at 48px so they never muddy the 16px toolbar
@@ -99,11 +99,12 @@ const draw = (fx, fy, S) => {
   const alpha = clamp01((0.006 - dist) / 0.006);
   if (alpha <= 0) return [0, 0, 0, 0];
 
-  // vertical gradient #a855f7 → #ec4899 (purple → pink) — NUMBERS must match
+  // vertical gradient #FF00A8 → #A855F7 (magenta → purple) — current brand
+  // tokens (--box-pink / --box-purple); NUMBERS must match them
   let color = [
-    Math.round(168 + (236 - 168) * ny),
-    Math.round(85 + (72 - 85) * ny),
-    Math.round(247 + (153 - 247) * ny),
+    Math.round(255 + (168 - 255) * ny),
+    Math.round(0 + (85 - 0) * ny),
+    Math.round(168 + (247 - 168) * ny),
     255,
   ];
 

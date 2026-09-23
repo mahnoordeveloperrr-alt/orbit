@@ -46,7 +46,7 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
       <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-zinc-200 dark:bg-zinc-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-4 rounded-2xl shadow-xl shadow-blue-900/40 mb-4 text-white">
+        <div className="bg-accent p-4 rounded-[14px] mb-4 text-accentInk">
           <Layers size={28} />
         </div>
         <h1 className="text-2xl font-bold text-textMain mb-1 tracking-tight">Orbitabs</h1>

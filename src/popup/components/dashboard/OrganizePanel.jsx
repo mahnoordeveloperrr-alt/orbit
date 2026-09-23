@@ -377,7 +377,7 @@ export default function OrganizePanel() {
     );
   };
 
-  const tabRow = (t, win, inGroup) => {
+  const tabRow = (t, win) => {
     const group = t.groupId ? win.groups.find(g => g.id === t.groupId) : null;
     const isDragging = dragTab?.tabId === t.id;
     const isSelected = selectedIds.has(t.id);
@@ -394,7 +394,6 @@ export default function OrganizePanel() {
         onDragLeave={() => { if (dragOverKey === tabKey) setDragOverKey(null); }}
         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropOnTab(t, win); }}
         className={`flex items-center gap-2 py-1.5 pr-2 rounded-lg border text-xs cursor-grab active:cursor-grabbing transition-colors ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'border-accent bg-accent/10 ring-1 ring-accent/40' : isOverTab ? 'border-accent bg-accent/10' : 'border-borderLight/50 bg-primary/70 hover:border-accent/40'}`}
-        style={inGroup && group ? { borderLeft: `3px solid currentColor` } : undefined}
         title={`${t.title}\n${t.url}\n\nClick = select · Ctrl/Cmd+click = toggle · Shift+click = range\nDrop a tab here to reorder (lands above this tab)`}
       >
         <GripVertical size={12} className="text-textMuted/50 flex-shrink-0" />
@@ -424,7 +423,7 @@ export default function OrganizePanel() {
       </div>
 
       {dragTab && dragTab.tabIds?.length > 1 && (
-        <div className="glass rounded-lg px-3 py-1.5 text-[11px] font-semibold text-accent flex items-center gap-2 relative z-20">
+        <div className="surface rounded-lg px-3 py-1.5 text-[11px] font-semibold text-accent flex items-center gap-2 relative z-20">
           <GripVertical size={12} /> Moving {dragTab.tabIds.length} tabs — drop on a group header / tab / strip
         </div>
       )}
@@ -432,7 +431,7 @@ export default function OrganizePanel() {
       {/* 🆕 SELECTION ACTION BAR — multi-tab → group without any drag precision.
           Sticky so it stays reachable while scrolling long window lists. */}
       {selectedIds.size > 0 && (
-        <div className="glass sticky top-0 z-30 rounded-xl p-2 flex items-center gap-1.5 flex-wrap shadow-md">
+        <div className="surface sticky top-0 z-30 rounded-xl p-2 flex items-center gap-1.5 flex-wrap shadow-md">
           <span className="text-[11px] font-bold text-accent bg-accent/10 border border-accent/20 px-2 py-1 rounded-full flex-shrink-0">
             {selectedIds.size} selected
           </span>
@@ -533,7 +532,7 @@ export default function OrganizePanel() {
           const stripOver = dragOverKey === stripKey;
 
           return (
-            <div key={win.id} className={`glass box-${boxColorFor(winIndex)} rounded-xl p-3`}>
+            <div key={win.id} className={`surface box-${boxColorFor(winIndex)} rounded-xl p-3`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-textMain">
                   Window {win.id} {win.focused && <span className="text-accent text-[10px] ml-1">● current</span>}

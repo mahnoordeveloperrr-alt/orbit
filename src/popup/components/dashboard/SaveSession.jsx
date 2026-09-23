@@ -7,7 +7,7 @@ import Input from '../common/Input';
 // one ("Session — Sep 8, 2026 — 10:32 PM"); rename later anytime.
 // Scope toggle: save all windows (default) or just the current one.
 // `compact` renders a slimmer row for the Dashboard status line.
-export default function SaveSession({ onSave, scope = 'all', onScopeChange, compact = false }) {
+export default function SaveSession({ onSave, scope = 'all', onScopeChange, compact = false, variant = 'primary' }) {
   const [name, setName] = useState('');
 
   const handleSave = () => {
@@ -36,7 +36,7 @@ export default function SaveSession({ onSave, scope = 'all', onScopeChange, comp
           {scope === 'all' ? 'All windows' : 'Current window'}
         </button>
       )}
-      <Button onClick={handleSave} className={`${compact ? 'px-3 py-1.5 text-xs' : ''} flex items-center gap-1 flex-shrink-0`}>
+      <Button variant={variant} onClick={handleSave} className={`${compact ? 'px-3 py-1.5 text-xs' : ''} flex items-center gap-1 flex-shrink-0`}>
         <Plus className="w-4 h-4" /> Save
       </Button>
     </div>

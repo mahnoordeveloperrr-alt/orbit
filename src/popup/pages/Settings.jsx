@@ -406,7 +406,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => onOpenLogin?.('login')}
-                className="px-3 py-2 rounded-lg bg-gradient-to-b from-blue-500 to-blue-700 text-white text-sm font-semibold hover:from-blue-400 hover:to-blue-600 transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                className="px-3 py-2 rounded-lg bg-accent text-accentInk text-sm font-semibold hover:bg-accentDark transition-colors shadow-sm flex items-center justify-center gap-1.5"
               >
                 <LogIn size={13} /> Sign in
               </button>
@@ -578,17 +578,21 @@ function Header({ onBack }) {
   );
 }
 
-// Reusable Section component — each settings box carries one of the five
-// box tints, cycled in order (purple, orange, pink, blue, green).
-const SECTION_COLORS = ['purple', 'orange', 'pink', 'blue', 'green'];
-let sectionCount = 0;
+// Reusable Section component — ONE card design for every section (spec §16),
+// with the reference's semantic accent per section (§20): General=identity
+// purple, Backup=blue, Privacy=warning yellow, everything else neutral.
+const SECTION_ACCENT = {
+  General: 'purple',
+  'Backup & Recovery': 'blue',
+  'Privacy & Data': 'yellow',
+};
 function Section({ icon, title, children }) {
-  const color = SECTION_COLORS[sectionCount++ % SECTION_COLORS.length];
+  const accent = SECTION_ACCENT[title] || '';
   return (
-    <div className={`glass box-${color} rounded-xl p-4 border shadow-sm`}>
+    <div className={`surface ${accent ? `box-${accent}` : 'border-borderLight'} rounded-[14px] p-4 border shadow-sm`}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-textMain">{icon}</span>
-        <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-300 uppercase tracking-wide">{title}</h2>
+        <span className={accent ? '' : 'text-accentText'} style={accent ? { color: `rgb(var(--box-${accent}))` } : undefined}>{icon}</span>
+        <h2 className="text-xs font-bold text-textMain uppercase tracking-wide">{title}</h2>
       </div>
       {children}
     </div>
@@ -619,7 +623,7 @@ function Segmented({ value, options, onChange }) {
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            value === o.value ? 'bg-accent text-white' : 'bg-white dark:bg-secondary text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-muted'
+            value === o.value ? 'bg-accent text-accentInk' : 'surface text-zinc-700 dark:text-zinc-300 hover:bg-muted'
           }`}
         >
           {o.label}
@@ -635,7 +639,7 @@ function Toggle({ checked, onChange }) {
     <button
       onClick={onChange}
       className={`relative w-11 h-6 rounded-full transition-colors ${
-        checked ? 'bg-accent' : 'bg-gray-300 dark:bg-secondary'
+        checked ? 'bg-accent' : 'bg-gray-300 dark:bg-zinc-800'
       }`}
     >
       <span

@@ -119,9 +119,9 @@ await act(async () => { rootEl.render(React.createElement(Dashboard, { cloudUser
 await tick(120);
 
 ok('Dashboard header renders', byText('h1', 'Orbitabs').length > 0);
-ok('view pills render (Sessions | Organize | Settings)', !!pill('Sessions') && !!pill('Organize') && !!pill('Settings'));
+ok('view pills render (Sessions | Organize | Settings)', !!pill('Sessions') && !!pill('Organizer') && !!pill('Settings'));
 ok('session cards render from store (live sessions only)', document.querySelectorAll('[class*="session-card-"]').length === 2);
-ok('search box present', !!document.querySelector('input[placeholder^="Search sessions"]'));
+ok('search box present', !!document.querySelector('input[placeholder^="Search saved sessions"]'));
 ok('no Settings panel before opening Settings', byText('span', 'Auto-save (Live Backup)').length === 0);
 
 console.log('\n── 1b. PIN: pin-to-top ordering + ⋯ menu ──');
@@ -150,7 +150,7 @@ await tick(80);
 ok('Unpin → storage write carries pinned:false', calls.some(([k, a]) => k === 'storage.local.set' && JSON.stringify(a[0]).includes('"pinned":false')));
 
 console.log('\n── 2. VIEWS: Organize | Settings ──');
-await act(async () => { fire(pill('Organize'), 'click'); });
+await act(async () => { fire(pill('Organizer'), 'click'); });
 await tick(80);
 ok('Organize view shows live windows', document.body.textContent.includes('Drop here to ungroup'));
 

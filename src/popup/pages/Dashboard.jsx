@@ -21,10 +21,8 @@ import {
 import SessionList from '../components/dashboard/SessionList';
 import OrganizePanel from '../components/dashboard/OrganizePanel';
 import SaveSession from '../components/dashboard/SaveSession';
-import { BOX_GRADIENTS } from '../utils/boxColors';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Button from '../components/common/Button';
-import Logo from '../components/common/Logo';
 import Settings from './Settings';
 import RecoveryBanner from '../components/dashboard/RecoveryBanner';
 import WelcomeCard from '../components/dashboard/WelcomeCard';
@@ -166,35 +164,26 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
   useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-zinc-100/80 dark:from-primary dark:to-secondary/70 p-5 flex flex-col relative overflow-hidden">
+    <div className="w-full h-full bg-primary p-5 flex flex-col relative overflow-hidden">
 
-      {/* ── Header: logo + wordmark + tagline, theme + cloud on the right ── */}
-      <div className="flex justify-between items-center mb-1.5 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <Logo size={26} />
-          <div>
-            <h1 className="text-lg font-bold text-textMain tracking-tight leading-none">
+      {/* ── Header (spec §6): centered brand block, context actions right ── */}
+      <div className="relative flex items-center justify-center mb-3">
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-textMain tracking-tight leading-none">
               Orbitabs
             </h1>
-            <p className="text-[11px] text-textMuted mt-0.5 leading-none">
-              Save your Chrome. Stay in control.
-            </p>
           </div>
+          <p className="text-[10px] text-textMuted mt-1 leading-none">
+            Save your Chrome. Stay in control.
+          </p>
         </div>
-        <div className="flex items-center gap-1">
-          {/* 🖊 Markup this page — annotation overlay (V1.1 MVP) */}
-          <Button variant="ghost" onClick={openMarkup} title="Markup this page — draw, highlight and keep notes with this URL" className="p-2">
-            <Pen className="w-4 h-4 text-accent" />
-          </Button>
-          {/* light / dark / system theme cycle — persist in App via useTheme */}
-          <Button variant="ghost" onClick={onCycleTheme} title={`Theme: ${theme} (click to change)`} className="p-2">
-            {theme === 'dark' ? <Moon className="w-4 h-4 text-accent" />
-              : theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" />
-              : <Monitor className="w-4 h-4 text-textMuted" />}
-          </Button>
+        {/* Cloud sign-in stays a header action — Markup pen + theme moon moved
+            to the nav-row corners (user layout request). */}
+        <div className="absolute right-0 flex items-center gap-0.5">
           {cloudUser ? (
             <Button variant="ghost" onClick={onLogout} title="Sign out of cloud sync" className="p-2">
-              <Cloud className="w-4 h-4 text-accent" />
+              <Cloud className="w-4 h-4" />
             </Button>
           ) : (
             <Button variant="ghost" onClick={onOpenLogin} title="Sign in for cloud sync (optional)" className="p-2">
@@ -204,35 +193,33 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
         </div>
       </div>
 
-      {/* 🆕 TASK 14: primary actions — pills LEFT + the ONE primary save button
-          RIGHT, on the same row (ui/ reference portrait layout: tab pills and
-          the colored action share the top row; no separate save panel). */}
-      <div className="flex items-center gap-1.5 mb-3 relative z-10">
-        <button
-          onClick={() => setActiveView('sessions')}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${activeView === 'sessions' ? 'bg-accent text-onAccent shadow-md' : 'glass text-textMuted hover:text-textMain'}`}
-        >
-          <Archive size={12} /> Sessions
-        </button>
-        <button
-          onClick={() => setActiveView('organize')}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${activeView === 'organize' ? 'bg-accent text-onAccent shadow-md' : 'glass text-textMuted hover:text-textMain'}`}
-        >
-          <FolderCog size={12} /> Organize
-        </button>
-        <button
-          onClick={() => setActiveView('settings')}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${activeView === 'settings' ? 'bg-accent text-onAccent shadow-md' : 'glass text-textMuted hover:text-textMain'}`}
-        >
-          <SettingsIcon size={12} /> Settings
-        </button>
-        <button
-          onClick={handleQuickSave}
-          title="Save every open tab, group and window right now"
-          className={`ml-auto flex items-center gap-1.5 bg-gradient-to-b text-onAccent text-xs font-semibold px-3.5 py-1.5 rounded-[10px] shadow-md transition-colors ${BOX_GRADIENTS.green}`}
-        >
-          <Zap size={13} /> Save
-        </button>
+      {/* 🆕 TASK 14: primary actions row. User layout: Markup pen in the LEFT
+          corner, theme moon in the RIGHT corner, the three nav pills centered
+          between them with equal spacing (spec §7 segmented nav). */}
+      <div className="relative z-10 flex items-center justify-center mb-4">
+        <Button variant="ghost" onClick={openMarkup} title="Markup this page — draw, highlight and keep notes with this URL" className="absolute left-0 p-2">
+          <Pen className="w-4 h-4" />
+        </Button>
+        <div className="flex items-center gap-1.5">
+          {[['sessions', Archive, 'Sessions'], ['organize', FolderCog, 'Organizer'], ['settings', SettingsIcon, 'Settings']].map(([key, Icon, label]) => (
+            <button
+              key={key}
+              onClick={() => setActiveView(key)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-[10px] transition-colors duration-150 ${
+                activeView === key
+                  ? 'bg-accent text-accentInk'
+                  : 'surface border border-borderLight text-textMuted hover:text-textMain'
+              }`}
+            >
+              <Icon size={12} /> {label}
+            </button>
+          ))}
+        </div>
+        <Button variant="ghost" onClick={onCycleTheme} title={`Theme: ${theme} (click to change)`} className="absolute right-0 p-2">
+          {theme === 'dark' ? <Moon className="w-4 h-4 text-accent" />
+            : theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" />
+            : <Monitor className="w-4 h-4 text-textMuted" />}
+        </Button>
       </div>
 
       {/* min-h-0 is REQUIRED: without it a flex child defaults to min-height:auto,
@@ -240,11 +227,40 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
           scroll (Settings was unreachable past the first screen). */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10">
         {activeView === 'sessions' && (
-          <>            <WelcomeCard onQuickSave={handleQuickSave} />
+          <>
+            <WelcomeCard onQuickSave={handleQuickSave} />
 
-            {/* Clear status line: named save + scope toggle + honest auto-save dot */}
+            {/* ── PRIMARY ACTION — spec §8: big green save, unambiguous labels ── */}
+            <div className="surface border border-accent/30 rounded-[14px] p-3 mb-2 relative z-10">
+              <button
+                onClick={handleQuickSave}
+                title="Save every open tab, group and window right now"
+                className="w-full flex items-center justify-center gap-2 bg-accent text-accentInk hover:bg-accentDark font-semibold text-sm px-5 py-2.5 rounded-[10px] transition-colors duration-150"
+              >
+                <Zap size={15} /> SAVE CURRENT TABS
+              </button>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                {['window', 'all'].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setScope(s)}
+                    title={s === 'window' ? 'Save tabs from this Chrome window.' : 'Save tabs from all open Chrome windows.'}
+                    className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors duration-150 ${
+                      scope === s
+                        ? 'bg-accent/15 text-accentText border-accent/50'
+                        : 'text-textMuted border-borderLight hover:text-textMain'
+                    }`}
+                  >
+                    {s === 'window' ? 'Current window' : 'All windows'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Status line: named save (secondary) + honest auto-save dot —
+                scope chips live in the save panel (single source, spec §8) */}
             <div className="flex items-center justify-between gap-2 mb-2 px-1 relative z-10">
-              <SaveSession onSave={handleSaveSession} scope={scope} onScopeChange={setScope} compact />
+              <SaveSession onSave={handleSaveSession} scope={scope} compact variant="outline" />
               <span
                 title={autoSaveOn
                   ? 'Auto-save is ON — your tabs are continuously protected'
@@ -298,8 +314,8 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
-                  placeholder="Search sessions by name or URL…"
-                  className="w-full glass rounded-[10px] pl-9 pr-8 py-2 text-sm text-textMain placeholder:text-textMuted/60 focus:outline-none focus:border-accent/60 border transition-colors"
+                  placeholder="Search saved sessions…"
+                  className="w-full surface rounded-[10px] pl-9 pr-8 py-2 text-sm text-textMain placeholder:text-textMuted/60 focus:outline-none focus:border-accent/70 border transition-colors"
                 />
                 {query && (
                   <button
@@ -310,6 +326,14 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                     <X size={13} />
                   </button>
                 )}
+              </div>
+            )}
+
+            {/* Section label — the ui/ reference's small left-anchored list title */}
+            {sessions.length > 0 && (
+              <div className="flex items-center justify-between px-1 mb-1.5 relative z-10">
+                <span className="text-[10px] font-semibold tracking-wider uppercase text-textMuted">Saved sessions</span>
+                <span className="text-[10px] text-textMuted">{filteredSessions.length}</span>
               </div>
             )}
 
@@ -324,7 +348,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
                   </p>
                   <button
                     onClick={handleQuickSave}
-                    className="bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-onAccent text-sm font-semibold px-4 py-2 rounded-[10px] shadow-md shadow-blue-900/40 transition-colors"
+                    className="bg-accent text-accentInk hover:bg-accentDark text-sm font-semibold px-4 py-2 rounded-[10px] transition-colors"
                   >
                     <span className="flex items-center gap-1.5"><Zap size={14} /> Save Current Tabs</span>
                   </button>

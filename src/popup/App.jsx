@@ -40,7 +40,7 @@ function App() {
   };
 
   return (
-    <div className="w-[420px] h-[560px] rounded-2xl border border-borderLight/60 overflow-hidden bg-gradient-to-b from-white to-zinc-100 dark:from-black dark:to-zinc-900">
+    <div className="w-[420px] h-[640px] rounded-2xl border border-borderLight/60 overflow-hidden bg-primary">
       {/* rounded shell; the PAGE paints the theme (index.css base layer —
           blue gradient + glow), and it stays visible through the shell so
           glass cards have something luminous behind their blur. No opaque

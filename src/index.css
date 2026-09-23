@@ -3,181 +3,125 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------
-   ORBITABS DESIGN SYSTEM
-   Font: Inter (UI + headings — headings are just heavier weights)
-   Radius scale: cards 14px · controls 10px · pills full
-   Shell: light = white bg / black text; dark = black bg / white text.
-   Primary actions are BLUE (design-theme ref: blue is the hero accent);
-   color lives in the BOXES too: every card/panel carries one of five
-   box tints — purple, orange, pink, blue, green (.box-* utilities).
-   Page carries soft blue glow washes, top and bottom, like the ref.
-   Glass: cards/panels use .glass — translucent surface + backdrop blur.
-   Icons: lucide, 14-16px, 1.5px stroke, textMuted → textMain hover
-   Motion: NONE. The UI must feel instant — hover is a color swap, not a
-   movement. No entrance animations, no staggers, no GSAP.
+   ORBITABS DESIGN SYSTEM — production spec edition
+   Near-black surfaces, neon-green primary, semantic accent colors.
+   Neon is an ACCENT (bars, active states, CTAs) — never a large
+   background. Flat surfaces + thin borders + compact density.
+   Font: Inter · Radius 6/10/14 · Icons lucide 1.5px 14-16px
+   Motion: 100-150ms color/transform only. No glassmorphism, no glow
+   washes, no gradients on surfaces.
    ------------------------------------------------------------------ */
 :root {
-  --c-primary: 255 255 255;      /* page surface — white */
-  --c-secondary: 245 245 245;    /* soft neutral surface */
-  --c-accent: 37 99 235;         /* primary action — royal blue (light) */
-  --c-accent-light: 191 219 254; /* soft blue glow */
-  --c-text-main: 0 0 0;          /* black text */
-  --c-text-muted: 113 113 122;   /* neutral grey */
-  --c-border: 228 228 231;       /* neutral border */
-  --c-muted: 244 244 245;        /* subtle fills */
-  --c-on-accent: 255 255 255;    /* white text on blue actions */
-  /* Box palette (light) — the five card colors. Fill = same hue, faint tint
-     over the white glass. */
-  --box-purple: 124 58 237;
-  --box-orange: 234 88 12;
-  --box-pink: 219 39 119;
-  --box-blue: 37 99 235;
-  --box-green: 5 150 105;
-  --box-fill-purple: 124 58 237;
-  --box-fill-orange: 234 88 12;
-  --box-fill-pink: 219 39 119;
-  --box-fill-blue: 37 99 235;
-  --box-fill-green: 5 150 105;
-  --box-fill-alpha: 0.08;
-  --box-inset-alpha: 0.18;   /* inner shadow depth on bars (light) */
-  /* Glass: translucent white card over the neutral page gradient */
-  --c-glass-bg: 255 255 255;     /* card fill at --glass-alpha opacity */
-  --glass-alpha: 0.72;
-  --glass-border: 255 255 255;   /* border at 60% alpha (highlight edge) */
-  --glass-blur: 14px;
+  /* Light mode — a true translation: same structure, swapped surfaces */
+  --c-primary: 248 248 248;      /* page surface */
+  --c-secondary: 242 242 242;    /* soft surface */
+  --c-surface: 255 255 255;      /* card fill */
+  --c-accent: 57 255 20;         /* Orbitabs green #39FF14 — fills/CTAs */
+  --c-accent-dark: 32 201 0;     /* pressed state */
+  --c-accent-text: 22 163 74;    /* green as TEXT (light-safe contrast) */
+  --c-accent-ink: 5 20 5;        /* dark text on neon fills */
+  --c-text-main: 24 24 27;
+  --c-text-muted: 113 113 122;
+  --c-border: 228 228 231;
+  --c-muted: 240 240 240;        /* subtle fills */
+  --c-on-accent: 5 20 5;         /* dark ink on neon fills */
+  /* Semantic accents — color communicates category/state, not decoration:
+     purple/magenta = session identity · blue = secondary · green = primary
+     actions · yellow/orange = recovery/warnings · red = destructive. */
+  --box-purple: 168 85 247;
+  --box-pink: 255 0 168;
+  --box-blue: 37 99 255;
+  --box-orange: 255 157 0;
+  --box-yellow: 255 214 0;
+  --box-fill-purple: 168 85 247;
+  --box-fill-pink: 255 0 168;
+  --box-fill-blue: 37 99 255;
+  --box-fill-orange: 255 157 0;
+  --box-fill-yellow: 255 214 0;
+  --box-fill-alpha: 0.06;
+  --box-inset-alpha: 0.12;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
 }
 
 .dark {
-  /* Monochrome night — black surface, white text, white actions */
-  --c-primary: 0 0 0;            /* true black */
-  --c-secondary: 24 24 27;       /* elevated neutral */
-  --c-accent: 96 165 250;        /* primary action — bright blue (dark) */
-  --c-accent-light: 30 58 138;   /* deep blue glow */
-  --c-text-main: 255 255 255;    /* white text */
-  --c-text-muted: 161 161 170;   /* neutral grey */
-  --c-border: 39 39 42;          /* neutral border */
-  --c-muted: 24 24 27;           /* subtle fills */
-  --c-on-accent: 255 255 255;    /* white text on blue actions */
-  /* Box palette (dark) — the ui/ reference look: black page carries DEEP
-     DARK per-hue fills (wine/plum/blue/green/orange-brown), while edges
-     (border + left bar) stay bright so color reads against black. */
-  --box-purple: 167 139 250;
-  --box-orange: 251 146 60;
-  --box-pink: 244 114 182;
-  --box-blue: 96 165 250;
-  --box-green: 52 211 153;
+  /* Near-black ladder — hierarchy without pure #000 everywhere */
+  --c-primary: 10 10 16;         /* #0A0A10 — black with the ui/ reference's blue cast */
+  --c-secondary: 13 13 13;       /* #0D0D0D */
+  --c-surface: 17 17 17;         /* #111111 card fill */
+  --c-accent: 57 255 20;         /* #39FF14 */
+  --c-accent-dark: 32 201 0;     /* #20C900 pressed */
+  --c-accent-text: 57 255 20;    /* green text reads on black */
+  --c-accent-ink: 5 20 5;
+  --c-text-main: 245 245 245;    /* #F5F5F5 */
+  --c-text-muted: 161 161 170;   /* #A1A1AA */
+  --c-border: 39 39 42;          /* #27272A thin borders */
+  --c-muted: 21 21 21;           /* #151515 elevated fill */
+  --c-on-accent: 5 20 5;         /* dark ink on neon fills */
+  --box-purple: 168 85 247;
+  --box-pink: 255 0 168;
+  --box-blue: 37 99 255;
+  --box-orange: 255 157 0;
+  --box-yellow: 255 214 0;
+  /* deep dark per-hue fills — colored boxes on black, bright edges */
   --box-fill-purple: 72 0 48;
-  --box-fill-orange: 72 48 0;
   --box-fill-pink: 48 0 48;
   --box-fill-blue: 0 0 72;
-  --box-fill-green: 0 48 0;
-  --box-fill-alpha: 0.88;
-  --box-inset-alpha: 0.42;   /* inner shadow depth on bars (dark) */
-  /* Glass: translucent neutral card over the black gradient */
-  --c-glass-bg: 24 24 27;
-  --glass-alpha: 0.55;
-  --glass-border: 255 255 255;   /* faint white edge highlight */
-  --glass-blur: 14px;
+  --box-fill-orange: 72 48 0;
+  --box-fill-yellow: 72 64 0;
+  --box-fill-alpha: 0.85;
+  --box-inset-alpha: 0.4;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.55);
 }
 
-/* Glass surface: translucent fill + backdrop blur + highlight border.
-   Used for cards/panels so the page gradient glows through. */
-.glass {
-  background-color: rgb(var(--c-glass-bg) / var(--glass-alpha));
-  border-color: rgb(var(--c-glass-border) / 0.28);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+/* Flat card/panel surface — replaces glassmorphism: solid fill + thin
+   border, per the spec (no translucency, no backdrop blur). */
+.surface {
+  background-color: rgb(var(--c-surface));
+  border-color: rgb(var(--c-border));
 }
 
-/* Colored boxes — every card/panel carries one of five hues:
-   purple, orange, pink, blue, green. Like the ui/ reference:
-   • a BRIGHT solid color strip runs across the top of the box,
-   • the BORDER is a shaded tone of the hue (never white) with a
-     strong 3px left bar,
-   • the FILL is a per-mode tone — faint tint over light glass, deep
-     dark hue on black.
-   The strip is a ::before (absolute, top corners rounded to match the
-   card) — deliberately NOT overflow:hidden, which would clip the card's
-   ⋯ dropdown menu. Pair with .glass. */
-.box-purple, .box-orange, .box-pink, .box-blue, .box-green {
-  position: relative;
-  /* the 3px left bar casts an inner shadow into the card */
+/* Colored identity accents — a bright 3px left bar + shaded border +
+   per-mode fill (faint tint on light, deep dark hue on black). Color
+   marks category/state: it never paints the whole card. */
+.box-purple, .box-pink, .box-blue, .box-orange, .box-yellow {
+  border-left: 3px solid rgb(var(--box-purple));
   box-shadow: inset 3px 0 4px -1px rgb(0 0 0 / var(--box-inset-alpha));
 }
-.box-purple::before, .box-orange::before, .box-pink::before,
-.box-blue::before, .box-green::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 8px;
-  border-radius: 13px 13px 0 0;
-  pointer-events: none;
-  /* inner shadow: top highlight + bottom dark inset gives the bar depth */
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.35),
-    inset 0 -2px 3px rgb(0 0 0 / var(--box-inset-alpha));
-}
-.box-purple::before  { background: rgb(var(--box-purple)); }
-.box-orange::before  { background: rgb(var(--box-orange)); }
-.box-pink::before    { background: rgb(var(--box-pink)); }
-.box-blue::before    { background: rgb(var(--box-blue)); }
-.box-green::before   { background: rgb(var(--box-green)); }
-.box-purple {
-  border-color: rgb(var(--box-purple) / 0.45);
-  border-left: 3px solid rgb(var(--box-purple));
-  background-image: linear-gradient(rgb(var(--box-fill-purple) / var(--box-fill-alpha)), rgb(var(--box-fill-purple) / var(--box-fill-alpha)));
-}
-.box-orange {
-  border-color: rgb(var(--box-orange) / 0.45);
-  border-left: 3px solid rgb(var(--box-orange));
-  background-image: linear-gradient(rgb(var(--box-fill-orange) / var(--box-fill-alpha)), rgb(var(--box-fill-orange) / var(--box-fill-alpha)));
-}
-.box-pink {
-  border-color: rgb(var(--box-pink) / 0.45);
-  border-left: 3px solid rgb(var(--box-pink));
-  background-image: linear-gradient(rgb(var(--box-fill-pink) / var(--box-fill-alpha)), rgb(var(--box-fill-pink) / var(--box-fill-alpha)));
-}
-.box-blue {
-  border-color: rgb(var(--box-blue) / 0.45);
-  border-left: 3px solid rgb(var(--box-blue));
-  background-image: linear-gradient(rgb(var(--box-fill-blue) / var(--box-fill-alpha)), rgb(var(--box-fill-blue) / var(--box-fill-alpha)));
-}
-.box-green {
-  border-color: rgb(var(--box-green) / 0.45);
-  border-left: 3px solid rgb(var(--box-green));
-  background-image: linear-gradient(rgb(var(--box-fill-green) / var(--box-fill-alpha)), rgb(var(--box-fill-green) / var(--box-fill-alpha)));
-}
+.box-purple { border-color: rgb(var(--box-purple) / 0.4); border-left-color: rgb(var(--box-purple)); background-image: linear-gradient(rgb(var(--box-fill-purple) / var(--box-fill-alpha)), rgb(var(--box-fill-purple) / var(--box-fill-alpha))); }
+.box-pink   { border-color: rgb(var(--box-pink) / 0.4);   border-left-color: rgb(var(--box-pink));   background-image: linear-gradient(rgb(var(--box-fill-pink) / var(--box-fill-alpha)), rgb(var(--box-fill-pink) / var(--box-fill-alpha))); }
+.box-blue   { border-color: rgb(var(--box-blue) / 0.4);   border-left-color: rgb(var(--box-blue));   background-image: linear-gradient(rgb(var(--box-fill-blue) / var(--box-fill-alpha)), rgb(var(--box-fill-blue) / var(--box-fill-alpha))); }
+.box-orange { border-color: rgb(var(--box-orange) / 0.4); border-left-color: rgb(var(--box-orange)); background-image: linear-gradient(rgb(var(--box-fill-orange) / var(--box-fill-alpha)), rgb(var(--box-fill-orange) / var(--box-fill-alpha))); }
+.box-yellow { border-color: rgb(var(--box-yellow) / 0.4); border-left-color: rgb(var(--box-yellow)); background-image: linear-gradient(rgb(var(--box-fill-yellow) / var(--box-fill-alpha)), rgb(var(--box-fill-yellow) / var(--box-fill-alpha))); }
+
+/* Card glow — same-hue halo ring (spec §24: EXTREMELY controlled glow, only
+   around identity cards; never a neon rectangle). One utility per hue so the
+   glow has a single owner in CSS, not inline styles in components. */
+.box-glow-purple { box-shadow: 0 0 0 1px rgb(var(--box-purple) / 0.12), var(--shadow-premium); }
+.box-glow-pink   { box-shadow: 0 0 0 1px rgb(var(--box-pink) / 0.12),   var(--shadow-premium); }
+.box-glow-blue   { box-shadow: 0 0 0 1px rgb(var(--box-blue) / 0.12),   var(--shadow-premium); }
+.box-glow-orange { box-shadow: 0 0 0 1px rgb(var(--box-orange) / 0.12), var(--shadow-premium); }
+.box-glow-yellow { box-shadow: 0 0 0 1px rgb(var(--box-yellow) / 0.12), var(--shadow-premium); }
 
 @layer base {
-  /* The PAGE paints the theme surface, not just the app root: Chrome's popup
-     window itself is square, so a rounded root left white slivers at the four
-     corners. Painting html/body with the surface color means the rounded
-     shell's corner cutouts show the THEME (never white), and the popup has a
-     clean edge-to-edge brand color in both light and dark mode. */
+  /* The PAGE paints the theme surface: Chrome's popup window is square, so
+     painting html/body means the rounded shell's corner cutouts show the
+     THEME (never white) — zero light pixels in the four corners. */
   html, body {
     background-color: rgb(var(--c-primary));
-    /* The popup is a fixed 420×560 shell — the document must NEVER scroll
-       (a scrollbar would drag the theme background along and leak it below
-       the rounded shell edge). Pages scroll internally via .custom-scrollbar. */
+    /* Fixed compact shell — the document NEVER scrolls; pages scroll
+       internally via .custom-scrollbar. */
     overflow: hidden;
   }
-  /* Glass needs a tinted page to glow through — never flat white/black.
-     Blue glow washes top + bottom, like the design-theme reference.
-     Tokens swap per mode, so one rule covers light AND dark. */
   html {
-    background-image:
-      radial-gradient(120% 80% at 50% -10%, rgb(var(--c-accent) / 0.22), transparent 55%),
-      radial-gradient(130% 70% at 50% 112%, rgb(var(--c-accent) / 0.16), transparent 60%),
-      linear-gradient(to bottom, rgb(var(--c-primary)), rgb(var(--c-secondary)));
+    /* Flat near-black page — hierarchy comes from surface steps, not
+       gradients or glow washes. */
+    background-image: none;
   }
   body {
     @apply text-textMain antialiased;
+    font-family: Inter, system-ui, sans-serif;
   }
 }
 
@@ -186,8 +130,13 @@
   width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-muted rounded-full;
+  background: rgb(var(--c-muted));
+  border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-accent/30 rounded-full hover:bg-accent/60;
+  background: rgb(var(--c-border));
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--c-text-muted) / 0.6);
 }

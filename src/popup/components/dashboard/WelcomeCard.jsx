@@ -37,7 +37,7 @@ export default function WelcomeCard({ onQuickSave }) {
   if (!visible) return null;
 
   return (
-    <div className="glass box-purple relative z-10 mb-2 rounded-[14px] border p-3.5">
+    <div className="surface box-purple relative z-10 mb-2 rounded-[14px] border p-3.5">
       <button
         onClick={dismiss}
         title="Don't show again"
@@ -51,7 +51,7 @@ export default function WelcomeCard({ onQuickSave }) {
       </p>
       <button
         onClick={handleSave}
-        className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-gradient-to-b from-violet-500 to-violet-700 hover:from-violet-400 hover:to-violet-600 text-white text-sm font-semibold px-3 py-2 rounded-[10px] shadow-md shadow-violet-900/40 transition-colors"
+        className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-accent text-accentInk hover:bg-accentDark text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors"
       >
         <Save size={14} />
         Save My Current Tabs

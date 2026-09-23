@@ -229,6 +229,20 @@ buttons are actually disabled, every button does something (no dead buttons),
 empty state shows "Your saved sessions will appear here." with a working CTA,
 and dark mode (cycle the theme button) has no white slivers or unreadable text.
 
+Design-system contract (all themes — check while testing Test P):
+- Shell: 420×640, rounded, overflow hidden; dark page paint extends into
+  every corner (zero white pixels outside the rounded shell).
+- Surfaces: flat fills + thin borders only — no glassmorphism, no gradients,
+  no glow washes. Neon green is an ACCENT (active pill, CTA, toggles,
+  Restore), never a large background.
+- Color meaning: purple/magenta = session identity · blue = secondary ·
+  green = primary actions · yellow/orange = recovery/warnings (AUTO badge
+  wears gold: system-managed state) · red = destructive.
+- Cards: dark interior + colored thin border + 3px left bar + subtle
+  same-hue glow (`.box-glow-*` utilities — the glow's single owner).
+- Dark base is `#0A0A10` (black with the ui/ reference's blue cast); light
+  mode is a true translation — same structure, swapped surfaces only.
+
 ---
 
 ### Test Q — Orbitabs Markup (V1.1 MVP, fresh profile)

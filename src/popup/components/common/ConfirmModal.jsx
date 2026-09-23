@@ -42,7 +42,7 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1.5 ${
-              danger ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-b from-violet-500 to-violet-700 hover:from-violet-400 hover:to-violet-600'
+              danger ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-accent text-accentInk hover:bg-accentDark'
             }`}
           >
             {danger ? <Trash2 size={13} /> : <Check size={13} />} {confirmLabel}
