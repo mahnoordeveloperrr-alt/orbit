@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Layers, CloudOff, Cloud, Settings as SettingsIcon,
+  Layers, Settings as SettingsIcon,
   FolderCog, Archive, Sun, Moon, Monitor, Search, X, Zap, Pen
 } from 'lucide-react';
 // 🆕 LOCAL-FIRST: sessions live in chrome.storage.local (services/store.js).
@@ -166,8 +166,13 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
   return (
     <div className="w-full h-full bg-primary p-5 flex flex-col relative overflow-hidden">
 
-      {/* ── Header (spec §6): centered brand block, context actions right ── */}
+      {/* ── Header: centered brand block + corner actions. The Markup pen and
+          theme moon sit in BOTH header corners and nav-row corners (user
+          layout: icons in the top corners, pills centered below). ── */}
       <div className="relative flex items-center justify-center mb-3">
+        <Button variant="ghost" onClick={openMarkup} title="Markup this page — draw, highlight and keep notes with this URL" className="absolute left-0 p-2">
+          <Pen className="w-4 h-4" />
+        </Button>
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-textMain tracking-tight leading-none">
@@ -178,19 +183,11 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
             Save your Chrome. Stay in control.
           </p>
         </div>
-        {/* Cloud sign-in stays a header action — Markup pen + theme moon moved
-            to the nav-row corners (user layout request). */}
-        <div className="absolute right-0 flex items-center gap-0.5">
-          {cloudUser ? (
-            <Button variant="ghost" onClick={onLogout} title="Sign out of cloud sync" className="p-2">
-              <Cloud className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button variant="ghost" onClick={onOpenLogin} title="Sign in for cloud sync (optional)" className="p-2">
-              <CloudOff className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+        <Button variant="ghost" onClick={onCycleTheme} title={`Theme: ${theme} (click to change)`} className="absolute right-0 p-2">
+          {theme === 'dark' ? <Moon className="w-4 h-4 text-accent" />
+            : theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" />
+            : <Monitor className="w-4 h-4 text-textMuted" />}
+        </Button>
       </div>
 
       {/* 🆕 TASK 14: primary actions row. User layout: Markup pen in the LEFT
@@ -385,6 +382,7 @@ export default function Dashboard({ cloudUser, onOpenLogin, onLogout, theme, onC
               onCycleTheme={onCycleTheme}
               onBack={() => setActiveView('sessions')}
               onOpenLogin={(mode) => onOpenLogin?.(mode === 'register' ? 'register' : 'login')}
+              onLogout={onLogout}
             />
           </div>
         )}

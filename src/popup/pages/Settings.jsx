@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, Shield, Palette, Cloud, CloudOff, HardDrive, RefreshCw,
   Download, Upload, Trash2, Keyboard, SlidersHorizontal,
-  RotateCcw, Eraser, History, XCircle, Info, LogIn, UserPlus,
+  RotateCcw, Eraser, History, XCircle, Info, LogIn, UserPlus, LogOut,
   Moon, Sun, Laptop, Check, Ban, TriangleAlert
 } from 'lucide-react';
 import {
@@ -31,7 +31,7 @@ const RETENTION_OPTIONS = [
   { value: 30, label: '30 days (recommended)' },
 ];
 
-export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpenLogin }) {
+export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpenLogin, onLogout }) {
   const [settings, setSettings] = useState(null);
   const [diag, setDiag] = useState(null);
   // 📦 Export / import status line
@@ -402,6 +402,14 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
               {cloudUser ? <><Check size={12} className="inline flex-shrink-0" /> Connected</> : 'Local'}
             </span>
           </div>
+          {cloudUser && (
+            <button
+              onClick={onLogout}
+              className="w-full mb-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 border border-borderLight text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <LogOut size={13} /> Sign out
+            </button>
+          )}
           {!cloudUser && (
             <div className="grid grid-cols-2 gap-2">
               <button
