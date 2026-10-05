@@ -25,6 +25,13 @@
   --c-border: 228 228 231;
   --c-muted: 240 240 240;        /* subtle fills */
   --c-on-accent: 5 20 5;         /* dark ink on neon fills */
+  /* Mock-calibrating semantic hex tokens — reuse the same hue values the
+     mock uses so component classes (box-*, toggle-switch.on.*) keep working. */
+  --color-green: #00e676;
+  --color-purple: #b388ff;
+  --color-blue: #448aff;
+  --color-pink: #ff4081;
+  --color-orange: #ff9100;
   /* Semantic accents — color communicates category/state, not decoration:
      purple/magenta = session identity · blue = secondary · green = primary
      actions · yellow/orange = recovery/warnings · red = destructive. */
@@ -103,6 +110,192 @@
 .box-glow-blue   { box-shadow: 0 0 0 1px rgb(var(--box-blue) / 0.12),   var(--shadow-premium); }
 .box-glow-orange { box-shadow: 0 0 0 1px rgb(var(--box-orange) / 0.12), var(--shadow-premium); }
 .box-glow-yellow { box-shadow: 0 0 0 1px rgb(var(--box-yellow) / 0.12), var(--shadow-premium); }
+
+/* ---------------------------------------------------------------
+   MOCK-CALIBRATED INNER GLOW — orbitabs/v1 UI styling pass
+   CSS variables + per-identity-color inner-shadow rules that mirror the
+   pasted OrbiTabs mock. Used for: group headers (identity hue), window
+   cards (slot-neutral pink as the default restore card), tab rows,
+   selection bar, and switch-on states. Tokens live in src/index.css so the
+   component only sets semantic values (no inline style soup).
+   --------------------------------------------------------------- */
+:root, .dark {
+  --glow-green: rgba(0, 230, 118, 0.4);
+  --glow-purple: rgba(179, 136, 255, 0.4);
+  --glow-blue: rgba(68, 138, 255, 0.4);
+  --glow-pink: rgba(255, 64, 129, 0.4);
+  --glow-orange: rgba(255, 145, 0, 0.4);
+  --card-bg: #18181c;
+  --panel-bg: #131316;
+  --text-main: #ffffff;
+  --text-muted: #8a8a93;
+}
+
+/* Dark interior panels — the mock's window/panel backgrounds */
+.dark-panel {
+  background-color: var(--panel-bg);
+  color: var(--text-main);
+}
+
+/* The mock's per-card inner-glow rule: two stacked inset shadows that read
+   as a soft, recessed identity fill. Directly equivalent to the mock's
+   .card-<hue> / .window-card / .setting-card blocks. */
+.inner-glow-green   { box-shadow: inset 0 0 30px var(--glow-green), inset 0 0 8px var(--glow-green); }
+.inner-glow-purple  { box-shadow: inset 0 0 30px var(--glow-purple), inset 0 0 8px var(--glow-purple); }
+.inner-glow-blue    { box-shadow: inset 0 0 30px var(--glow-blue), inset 0 0 8px var(--glow-blue); }
+.inner-glow-pink    { box-shadow: inset 0 0 30px var(--glow-pink), inset 0 0 8px var(--glow-pink); }
+.inner-glow-orange  { box-shadow: inset 0 0 30px var(--glow-orange), inset 0 0 8px var(--glow-orange); }
+
+/* Neutral fallback for slots not covered by the mock's hue mapping
+   (window cards default to pink, the mock's restore colour). */
+.inner-glow-pink, .inner-glow-default { box-shadow: inset 0 0 30px var(--glow-pink), inset 0 0 8px var(--glow-pink); }
+
+/* Window-card interior — the mock's window-card has a deeper, softer
+   pink inner glow than the identity cards. Keep the SAME rule but let the
+   component tint via the box fill so individuals stay distinguishable. */
+.inner-glow-window {
+  box-shadow: inset 0 0 40px var(--glow-pink), inset 0 0 10px var(--glow-pink);
+}
+
+/* Tab-row interior — the mock's tab items are dark cards with a soft
+   inner shadow so content sits in a recessed band. */
+.inner-glow-tab-row {
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Session tabs card — the exact inner-shadow treatment the user wants.
+   CRITICAL: the blue light is trapped INSIDE the card edges via inset
+   shadows only. No outer/shadow-drop halo, no border, no gradient, no
+   glassmorphism. overflow: hidden keeps the inset glow clipped by the
+   rounded card corners so the light reads as embedded. */
+.session-card {
+  background-color: #18181c;
+  border-radius: 14px;
+  padding: 18px;
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 30px rgba(68, 138, 255, 0.40),
+    inset 0 0 8px rgba(68, 138, 255, 0.40),
+    inset 0 0 12px rgba(0, 0, 0, 0.55);  /* inner shadow — darkens the LOW edge so the card reads 'trapped' / recessed */
+  color: var(--text-main, #ffffff);
+}
+
+/* Tab item inside the session card — dark band with subtle dark inset shadow.
+   No blue outer glow, no strong illumination — the dark band stays dark. */
+.session-card .tab-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 12px 15px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.session-card .tab-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.session-card .tab-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.session-card .tab-url {
+  font-size: 10px;
+  color: var(--text-muted, #8a8a93);
+}
+
+/* Restore button — the session card's restore CTA. Transparent background,
+   no border, blue text #448AFF, and an INSET blue glow that stays inside
+   the button's rounded edges. Hover deepens the inset glow only — no outer
+   shadow, no background change beyond the transparent fill. */
+.session-card .btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: #448aff;
+  box-shadow: inset 0 0 15px rgba(68, 138, 255, 0.40);
+  transition: all 0.3s ease;
+}
+
+.session-card .btn:hover {
+  box-shadow: inset 0 0 25px rgba(68, 138, 255, 0.40);
+}
+
+/* Session card container — strip the Card wrapper's outer halo/glow so the
+   ONLY light on the card comes from the inset shadows (the inner glow).
+   No external blue halo, no blue border, no gradient, no glass. */
+.session-card {
+  box-shadow: none !important;
+  border: none !important;
+  background: #18181c !important;
+  border-radius: 14px !important;
+}
+
+.session-card .card-actions {
+  display: flex;
+  gap: 12px;
+  color: var(--text-muted, #8a8a93);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.session-card .card-actions i:hover {
+  color: var(--text-main, #ffffff);
+  transition: 0.2s;
+}
+
+/* Selection action bar — the mock's action-row holds neutral dark buttons
+   with cyan/green/purple accents. */
+.action-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Toggle switch — mock states: off neutral, on pink/blue/orange. */
+.toggle-switch {
+  width: 46px;
+  height: 24px;
+  background-color: #2a2a30;
+  border-radius: 15px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.toggle-switch.on { box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.2); }
+.toggle-switch.on::after { left: 25px; }
+
+/* ON switches painted with the mock's semantic hues (per the spec: on.pink
+   = session identity, on.blue = backup, on.orange = privacy). */
+.toggle-switch.on.pink { background-color: var(--color-pink); box-shadow: inset 0 0 15px var(--glow-pink); }
+.toggle-switch.on.blue { background-color: var(--color-blue); box-shadow: inset 0 0 15px var(--glow-blue); }
+.toggle-switch.on.orange { background-color: var(--color-orange); box-shadow: inset 0 0 15px var(--glow-orange); }
 
 @layer base {
   /* The PAGE paints the theme surface: Chrome's popup window is square, so
