@@ -8,6 +8,14 @@ const UserSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },          // ✅ Email verify hua ya nahi
   verificationToken: { type: String },
   verificationTokenExpires: { type: Date },
+  // 🆕 Password recovery — single-use token, 30-minute window (P0 account
+  //    lifecycle: forgot/reset password was the one missing flow).
+  resetToken: { type: String },
+  resetTokenExpires: { type: Date },
+  // 💰 ENTITLEMENT (A2) — server-side plan, default 'free'. Enforced in
+  //    routes/sessions.js (never trusted from the client); billing flips it
+  //    to 'pro' later. Sessions-per-plan lives in routes/plan.js constants.
+  plan: { type: String, enum: ['free', 'pro'], default: 'free' },
 });
 
 UserSchema.pre('save', async function() {

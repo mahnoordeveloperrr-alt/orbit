@@ -9,9 +9,10 @@ import { normalizeSession } from '../../services/sessionSchema';
 
 /**
  * Does `session` match `query`?
- * True when the name, any tab url, or any tab title contains the query
- * (case-insensitive). A URL match highlights the whole session — you don't
- * need to remember which session had that one article open.
+ * True when the name, any tab url, any tab title, any TAG, the note, or the
+ * folder contains the query (case-insensitive). A URL match highlights the
+ * whole session — you don't need to remember which session had that one
+ * article open.
  */
 export function sessionMatchesQuery(session, rawQuery) {
   const q = (rawQuery || '').trim().toLowerCase();
@@ -21,6 +22,11 @@ export function sessionMatchesQuery(session, rawQuery) {
   if (!v1) return false; // corrupt/empty doc — hidden when filtering is active
 
   if (v1.name.toLowerCase().includes(q)) return true;
+
+  // 🆕 V1.5 metadata — tags/note/folder are searchable like everything else
+  if ((v1.tags || []).some(t => t.toLowerCase().includes(q))) return true;
+  if (v1.note && v1.note.toLowerCase().includes(q)) return true;
+  if (v1.folder && v1.folder.toLowerCase().includes(q)) return true;
 
   return v1.windows.some(w =>
     w.tabs.some(t =>

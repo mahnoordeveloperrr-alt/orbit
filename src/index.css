@@ -8,74 +8,92 @@
    Neon is an ACCENT (bars, active states, CTAs) — never a large
    background. Flat surfaces + thin borders + compact density.
    Font: Inter · Radius 6/10/14 · Icons lucide 1.5px 14-16px
-   Motion: 100-150ms color/transform only. No glassmorphism, no glow
-   washes, no gradients on surfaces.
+   Motion: soft Google/Material-style motion — fade-up entrances with
+   stagger, page-view cross-fades, dialog/menu scale-ins, press states;
+   tokens + keyframes live in the MOTION SYSTEM section at the bottom.
+   No glassmorphism, no glow washes, no gradients on surfaces.
    ------------------------------------------------------------------ */
 :root {
-  /* Light mode — a true translation: same structure, swapped surfaces */
-  --c-primary: 248 248 248;      /* page surface */
-  --c-secondary: 242 242 242;    /* soft surface */
+  /* Light mode — MOCK-CALIBRATED (ui/lightmode.png, re-measured pixel by
+     pixel on request). BRAND ACCENT = GOOGLE BLUE (user request: green
+     hatao): #1A73E8 fills with white ink for primary actions (Google
+     buttons), tonal #D3E3FD + blue ink for selected states. */
+  --c-primary: 255 255 255;      /* page surface — the mock's white panel */
+  --c-secondary: 250 250 250;    /* soft surface */
   --c-surface: 255 255 255;      /* card fill */
-  --c-accent: 57 255 20;         /* Orbitabs green #39FF14 — fills/CTAs */
-  --c-accent-dark: 32 201 0;     /* pressed state */
-  --c-accent-text: 22 163 74;    /* green as TEXT (light-safe contrast) */
-  --c-accent-ink: 5 20 5;        /* dark text on neon fills */
+  --c-accent: 26 115 232;        /* #1A73E8 Google blue-600 — primary fills */
+  --c-accent-dark: 24 103 188;   /* #1867BC pressed blue */
+  --c-accent-text: 25 103 210;   /* #1967D2 Google blue as TEXT (AA on white) */
+  --c-accent-ink: 255 255 255;   /* white ink on blue fills (Google buttons) */
   --c-text-main: 24 24 27;
   --c-text-muted: 113 113 122;
   --c-border: 228 228 231;
   --c-muted: 240 240 240;        /* subtle fills */
-  --c-on-accent: 5 20 5;         /* dark ink on neon fills */
+  --c-on-accent: 255 255 255;    /* white ink on blue fills */
   /* Mock-calibrating semantic hex tokens — reuse the same hue values the
      mock uses so component classes (box-*, toggle-switch.on.*) keep working. */
   --color-green: #00e676;
   --color-purple: #b388ff;
-  --color-blue: #448aff;
-  --color-pink: #ff4081;
-  --color-orange: #ff9100;
+  --color-blue: #0019fb;
+  --color-pink: #fb00cd;
+  --color-orange: #fb9200;
   /* Semantic accents — color communicates category/state, not decoration:
      purple/magenta = session identity · blue = secondary · green = primary
      actions · yellow/orange = recovery/warnings · red = destructive. */
-  --box-purple: 168 85 247;
-  --box-pink: 255 0 168;
-  --box-blue: 37 99 255;
-  --box-orange: 255 157 0;
-  --box-yellow: 255 214 0;
-  --box-fill-purple: 168 85 247;
-  --box-fill-pink: 255 0 168;
-  --box-fill-blue: 37 99 255;
-  --box-fill-orange: 255 157 0;
-  --box-fill-yellow: 255 214 0;
-  --box-fill-alpha: 0.06;
-  --box-inset-alpha: 0.12;
+  /* LIGHT identity = Google Workspace tint palette (user-specified hues):
+     blue #E8F0FE · pink #FCE8E6 · yellow #FEF7E0 · green #E6F4EA (+ derived
+     purple #F3E8FD · orange #FFEDD8). WORN ONE TINT-STEP DEEPER on request
+     (the level-1 tints vanished on white): Google's own LEVEL-2 of the SAME
+     hues — blue #D2E3FC · pink #FAD2CF · yellow #FDE293 · green #CEEAD6 ·
+     purple #E9D7FB · orange #FFE0BE (last two derived). The .dark block
+     below overrides every one with the saturated neon set — dark untouched. */
+  --box-purple: 233 215 251;    /* #E9D7FB level-2 purple */
+  --box-pink: 250 210 207;      /* #FAD2CF — level-2 of #FCE8E6 */
+  --box-blue: 210 227 252;      /* #D2E3FC — level-2 of #E8F0FE */
+  --box-orange: 255 224 190;    /* #FFE0BE — level-2 of #FFEDD8 */
+  --box-yellow: 253 226 147;    /* #FDE293 — level-2 of #FEF7E0 */
+  --box-green: 206 234 214;     /* #CEEAD6 — level-2 of #E6F4EA */
+  --box-fill-purple: 233 215 251;
+  --box-fill-pink: 250 210 207;
+  --box-fill-blue: 210 227 252;
+  --box-fill-orange: 255 224 190;
+  --box-fill-yellow: 253 226 147;
+  --box-fill-green: 206 234 214;
+  /* Level-2 tints carry themselves, so the wash stays at 0.5 and still
+     reads over the light interior — identity = tinted surface + 3px bar. */
+  --box-fill-alpha: 0.5;
+  --box-inset-alpha: 0.5;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-premium-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
 }
 
 .dark {
-  /* Near-black ladder — hierarchy without pure #000 everywhere */
-  --c-primary: 10 10 16;         /* #0A0A10 — black with the ui/ reference's blue cast */
+  /* User-selected pure black canvas; cards and controls retain their surface steps. */
+  --c-primary: 0 0 0;
   --c-secondary: 13 13 13;       /* #0D0D0D */
   --c-surface: 17 17 17;         /* #111111 card fill */
-  --c-accent: 57 255 20;         /* #39FF14 */
-  --c-accent-dark: 32 201 0;     /* #20C900 pressed */
-  --c-accent-text: 57 255 20;    /* green text reads on black */
-  --c-accent-ink: 5 20 5;
+  --c-accent: 138 180 248;       /* #8AB4F8 Google dark-theme blue */
+  --c-accent-dark: 174 203 250;  /* #AECBFA hover */
+  --c-accent-text: 138 180 248;  /* blue text reads on black */
+  --c-accent-ink: 4 30 73;       /* #041E49 Google dark ink on blue fills */
   --c-text-main: 245 245 245;    /* #F5F5F5 */
   --c-text-muted: 161 161 170;   /* #A1A1AA */
   --c-border: 39 39 42;          /* #27272A thin borders */
   --c-muted: 21 21 21;           /* #151515 elevated fill */
-  --c-on-accent: 5 20 5;         /* dark ink on neon fills */
+  --c-on-accent: 4 30 73;        /* Google dark ink on blue fills */
   --box-purple: 168 85 247;
-  --box-pink: 255 0 168;
-  --box-blue: 37 99 255;
-  --box-orange: 255 157 0;
+  --box-pink: 251 0 205;        /* #FB00CD */
+  --box-blue: 0 25 251;         /* #0019FB */
+  --box-orange: 251 146 0;      /* #FB9200 */
   --box-yellow: 255 214 0;
+  --box-green: 0 230 118;       /* #00E676 neon — dark flips green like every hue */
   /* deep dark per-hue fills — colored boxes on black, bright edges */
   --box-fill-purple: 72 0 48;
-  --box-fill-pink: 48 0 48;
-  --box-fill-blue: 0 0 72;
-  --box-fill-orange: 72 48 0;
+  --box-fill-pink: 76 0 62;
+  --box-fill-blue: 0 8 76;
+  --box-fill-orange: 76 45 0;
   --box-fill-yellow: 72 64 0;
+  --box-fill-green: 0 36 16;
   --box-fill-alpha: 0.85;
   --box-inset-alpha: 0.4;
   --shadow-premium: 0 1px 2px rgba(0, 0, 0, 0.45);
@@ -92,7 +110,7 @@
 /* Colored identity accents — a bright 3px left bar + shaded border +
    per-mode fill (faint tint on light, deep dark hue on black). Color
    marks category/state: it never paints the whole card. */
-.box-purple, .box-pink, .box-blue, .box-orange, .box-yellow {
+.box-purple, .box-pink, .box-blue, .box-orange, .box-yellow, .box-green {
   border-left: 3px solid rgb(var(--box-purple));
   box-shadow: inset 3px 0 4px -1px rgb(0 0 0 / var(--box-inset-alpha));
 }
@@ -101,6 +119,32 @@
 .box-blue   { border-color: rgb(var(--box-blue) / 0.4);   border-left-color: rgb(var(--box-blue));   background-image: linear-gradient(rgb(var(--box-fill-blue) / var(--box-fill-alpha)), rgb(var(--box-fill-blue) / var(--box-fill-alpha))); }
 .box-orange { border-color: rgb(var(--box-orange) / 0.4); border-left-color: rgb(var(--box-orange)); background-image: linear-gradient(rgb(var(--box-fill-orange) / var(--box-fill-alpha)), rgb(var(--box-fill-orange) / var(--box-fill-alpha))); }
 .box-yellow { border-color: rgb(var(--box-yellow) / 0.4); border-left-color: rgb(var(--box-yellow)); background-image: linear-gradient(rgb(var(--box-fill-yellow) / var(--box-fill-alpha)), rgb(var(--box-fill-yellow) / var(--box-fill-alpha))); }
+.box-green  { border-color: rgb(var(--box-green) / 0.4);  border-left-color: rgb(var(--box-green));  background-image: linear-gradient(rgb(var(--box-fill-green) / var(--box-fill-alpha)), rgb(var(--box-fill-green) / var(--box-fill-alpha))); }
+
+/* Per-identity hue hooks — any element wearing box-* publishes its OWN hue
+   (glow + ink). Nested inner-glow rules (.session-card, .restore-btn,
+   .inner-glow-window) read these, so every card lights in ITS session color
+   instead of one fixed blue. Custom properties inherit: children (the Restore
+   button) pick up the parent card's hue automatically. */
+.box-purple { --card-hue: var(--glow-purple); --card-ink: rgb(var(--box-purple)); }
+.box-pink   { --card-hue: var(--glow-pink);   --card-ink: rgb(var(--box-pink)); }
+.box-blue   { --card-hue: var(--glow-blue);   --card-ink: rgb(var(--box-blue)); }
+.box-orange { --card-hue: var(--glow-orange); --card-ink: rgb(var(--box-orange)); }
+.box-yellow { --card-hue: var(--glow-yellow); --card-ink: rgb(var(--box-yellow)); }
+.box-green  { --card-hue: var(--glow-green);  --card-ink: rgb(var(--box-green)); }
+
+/* Per-hue FILL + INK for the elements that paint themselves with the session
+   color (Restore pill, meta chip) — one owner, so light mode can swap both
+   in a single place (measured pastels from ui/lightmode.png). Blue carries
+   white ink only in dark (#0019FB is too dark for dark ink); the light
+   pastels all wear near-black ink. The raw triplet (--hue-rgb) feeds
+   alpha composites like the chip wash. */
+.box-purple { --hue-rgb: var(--box-purple); --hue-fill: rgb(var(--box-purple)); --hue-ink: rgb(var(--c-accent-ink)); }
+.box-pink   { --hue-rgb: var(--box-pink);   --hue-fill: rgb(var(--box-pink));   --hue-ink: rgb(var(--c-accent-ink)); }
+.box-blue   { --hue-rgb: var(--box-blue);   --hue-fill: rgb(var(--box-blue));   --hue-ink: #ffffff; }
+.box-orange { --hue-rgb: var(--box-orange); --hue-fill: rgb(var(--box-orange)); --hue-ink: rgb(var(--c-accent-ink)); }
+.box-yellow { --hue-rgb: var(--box-yellow); --hue-fill: rgb(var(--box-yellow)); --hue-ink: rgb(var(--c-accent-ink)); }
+.box-green  { --hue-rgb: var(--box-green);  --hue-fill: rgb(var(--box-green));  --hue-ink: rgb(var(--c-accent-ink)); }
 
 /* Card glow — same-hue halo ring (spec §24: EXTREMELY controlled glow, only
    around identity cards; never a neon rectangle). One utility per hue so the
@@ -110,6 +154,7 @@
 .box-glow-blue   { box-shadow: 0 0 0 1px rgb(var(--box-blue) / 0.12),   var(--shadow-premium); }
 .box-glow-orange { box-shadow: 0 0 0 1px rgb(var(--box-orange) / 0.12), var(--shadow-premium); }
 .box-glow-yellow { box-shadow: 0 0 0 1px rgb(var(--box-yellow) / 0.12), var(--shadow-premium); }
+.box-glow-green  { box-shadow: 0 0 0 1px rgb(var(--box-green) / 0.12),  var(--shadow-premium); }
 
 /* ---------------------------------------------------------------
    MOCK-CALIBRATED INNER GLOW — orbitabs/v1 UI styling pass
@@ -119,12 +164,32 @@
    selection bar, and switch-on states. Tokens live in src/index.css so the
    component only sets semantic values (no inline style soup).
    --------------------------------------------------------------- */
-:root, .dark {
+:root {
+  /* LIGHT glow tokens — the SAME Google tints, worn one LEVEL DEEPER
+     (level-2, on request: the level-1 glow was invisible on the white card,
+     so the trapped rim now clearly shows each session's hue). Green stays in
+     its #E6F4EA family — #CEEAD6 is Google's own next step of that green.
+     Saturated hues live in dark. */
+  --glow-green: rgb(206 234 214 / 0.9);    /* #CEEAD6 — deeper step of #E6F4EA */
+  --glow-purple: rgb(233 215 251 / 0.9);   /* #E9D7FB derived */
+  --glow-blue: rgb(210 227 252 / 0.9);     /* #D2E3FC */
+  --glow-pink: rgb(250 210 207 / 0.9);     /* #FAD2CF */
+  --glow-orange: rgb(255 224 190 / 0.9);   /* #FFE0BE derived */
+  --glow-yellow: rgb(253 226 147 / 0.9);   /* #FDE293 */
+  --card-bg: #cfcfcf;        /* light card interior — flat grey under the glow */
+  --panel-bg: #e6e6e8;
+  --text-main: #18181b;      /* dark ink inside glow cards (was pinned white —
+                                the light interior is light, so ink flips) */
+  --text-muted: #5b5b60;
+}
+
+.dark {
   --glow-green: rgba(0, 230, 118, 0.4);
   --glow-purple: rgba(179, 136, 255, 0.4);
-  --glow-blue: rgba(68, 138, 255, 0.4);
-  --glow-pink: rgba(255, 64, 129, 0.4);
-  --glow-orange: rgba(255, 145, 0, 0.4);
+  --glow-blue: rgba(0, 25, 251, 0.4);     /* #0019FB */
+  --glow-pink: rgba(251, 0, 205, 0.4);    /* #FB00CD */
+  --glow-orange: rgba(251, 146, 0, 0.4);  /* #FB9200 */
+  --glow-yellow: rgba(255, 214, 0, 0.4);
   --card-bg: #18181c;
   --panel-bg: #131316;
   --text-main: #ffffff;
@@ -137,25 +202,57 @@
   color: var(--text-main);
 }
 
-/* The mock's per-card inner-glow rule: two stacked inset shadows that read
-   as a soft, recessed identity fill. Directly equivalent to the mock's
-   .card-<hue> / .window-card / .setting-card blocks. */
-.inner-glow-green   { box-shadow: inset 0 0 30px var(--glow-green), inset 0 0 8px var(--glow-green); }
-.inner-glow-purple  { box-shadow: inset 0 0 30px var(--glow-purple), inset 0 0 8px var(--glow-purple); }
-.inner-glow-blue    { box-shadow: inset 0 0 30px var(--glow-blue), inset 0 0 8px var(--glow-blue); }
-.inner-glow-pink    { box-shadow: inset 0 0 30px var(--glow-pink), inset 0 0 8px var(--glow-pink); }
-.inner-glow-orange  { box-shadow: inset 0 0 30px var(--glow-orange), inset 0 0 8px var(--glow-orange); }
+/* GROUP HEADER band inside an organizer window card — same recipe as the
+   session card's TAB BAND (.session-card .tab-item): a dark translucent
+   fill + a dark inset shadow, so the band reads RECESSED like the mock's
+   tab rows instead of a flat neon strip. The group's own hue still glows
+   underneath the lip (inset, last in the stack = painted below the dark
+   shadow) so colour identity survives — it just no longer floods the row. */
+.inner-glow-green   { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-green); }
+.inner-glow-purple  { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-purple); }
+.inner-glow-blue    { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-blue); }
+.inner-glow-pink    { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-pink); }
+.inner-glow-orange  { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-orange); }
 
 /* Neutral fallback for slots not covered by the mock's hue mapping
    (window cards default to pink, the mock's restore colour). */
-.inner-glow-pink, .inner-glow-default { box-shadow: inset 0 0 30px var(--glow-pink), inset 0 0 8px var(--glow-pink); }
+.inner-glow-pink, .inner-glow-default { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--glow-pink); }
 
-/* Window-card interior — the mock's window-card has a deeper, softer
-   pink inner glow than the identity cards. Keep the SAME rule but let the
-   component tint via the box fill so individuals stay distinguishable. */
-.inner-glow-window {
-  box-shadow: inset 0 0 40px var(--glow-pink), inset 0 0 10px var(--glow-pink);
+/* Full-width accent panels — the Organizer's WINDOW CARD and the Settings
+   SECTION cards both wear the session-card inner shadow (one owner, two
+   consumers — they must never drift apart). The section's/window's OWN hue
+   comes from --card-hue (published by its box-* class), so each panel lights
+   in its own colour while sharing this single recipe. */
+.inner-glow-window,
+.inner-glow-section {
+  /* SESSION-CARD INNER SHADOW: hue glow ×2 + the dark lip `.session-card`
+     uses, and the same flat #18181c interior so the ONLY light on the card
+     is the glow trapped inside its rounded edges (the box-* gradient fill +
+     hue border are stripped here exactly as .session-card strips them —
+     colour identity moves into the glow itself). `!important` keeps the
+     wrapper's fill/border/outer shadow from winning over it. */
+  background: var(--card-bg) !important;
+  background-image: none !important;
+  /* 1px transparent (was `none`) — light paints a 1px hue border here, so
+     dark reserves the same pixel and the card is identically sized in both
+     themes (theme toggle must never resize a card). */
+  border: 1px solid transparent !important;
+  /* Always-white base ink (the token .session-card uses): the interior is
+     dark in BOTH modes, so descendants that don't set their own colour must
+     never inherit the light theme's near-black text. */
+  color: var(--text-main, #ffffff);
+  box-shadow:
+    inset 0 0 40px var(--card-hue, var(--glow-pink)),
+    inset 0 0 10px var(--card-hue, var(--glow-pink)),
+    inset 0 0 12px rgba(0, 0, 0, 0.55) !important;
 }
+
+/* The card interior is dark in BOTH modes (exactly like .session-card), so
+   its headings must never pick up the light theme's near-black ink — theme
+   ink inside this card is pinned to the always-white token. Muted greys are
+   already legible on #18181c in both modes, so they are left to the theme. */
+.inner-glow-window .text-textMain,
+.inner-glow-section .text-textMain { color: var(--text-main, #ffffff); }
 
 /* Tab-row interior — the mock's tab items are dark cards with a soft
    inner shadow so content sits in a recessed band. */
@@ -166,19 +263,25 @@
 /* Session tabs card — the exact inner-shadow treatment the user wants.
    CRITICAL: the blue light is trapped INSIDE the card edges via inset
    shadows only. No outer/shadow-drop halo, no border, no gradient, no
-   glassmorphism. overflow: hidden keeps the inset glow clipped by the
-   rounded card corners so the light reads as embedded. */
+   glassmorphism. NB: NO `overflow: hidden` on this card — inset shadows
+   are already clipped to the border-radius by the browser, and an overflow
+   clip here historically cut the card's ⋯ dropdown menu in half (SessionList
+   carries the same warning in its own comment). */
 .session-card {
-  background-color: var(--bg-card, #18181c);
+  background-color: var(--card-bg, #18181c);
   border-radius: 14px;
   padding: 18px;
   width: 100%;
   max-width: 600px;
-  overflow: hidden;
+  /* MANDATED INNER GLOW — real `box-shadow: inset …`, the session's OWN hue
+     (#FB00CD / #0019FB / #FB9200 via --card-hue from its box-* class) trapped
+     inside the rounded edges. `!important` so it also outranks the Card
+     wrapper's hover:shadow-premium-lg OUTER drop shadow (spec: the card may
+     only ever be lit from the inside). */
   box-shadow:
-    inset 0 0 30px var(--glow-blue),
-    inset 0 0 8px var(--glow-blue),
-    inset 0 0 12px rgba(0, 0, 0, 0.55);  /* inner shadow — darkens the LOW edge so the card reads 'trapped' / recessed */
+    inset 0 0 30px var(--card-hue, var(--glow-blue)),
+    inset 0 0 8px var(--card-hue, var(--glow-blue)),
+    inset 0 0 12px rgba(0, 0, 0, 0.55) !important;  /* inner shadow — darkens the LOW edge so the card reads 'trapped' / recessed */
   color: var(--text-main, #ffffff);
 }
 
@@ -212,8 +315,8 @@
 }
 
 /* Restore button — the session card's restore CTA. Transparent background,
-   no border, blue text #448AFF, and an INSET blue glow that stays inside
-   the button's rounded edges. Hover deepens the inset glow only — no outer
+   no border, TEXT + INSET glow in the card's own hue, staying inside the
+   button's rounded edges. Hover deepens the inset glow only — no outer
    shadow, no background change beyond the transparent fill. */
 .session-card .btn {
   padding: 6px 16px;
@@ -223,22 +326,88 @@
   cursor: pointer;
   background: transparent;
   border: none;
-  color: #448aff;
-  box-shadow: inset 0 0 15px rgba(68, 138, 255, 0.40);
+  color: var(--card-ink, rgb(var(--box-blue)));
+  box-shadow: inset 0 0 15px var(--card-hue, var(--glow-blue));
   transition: all 0.3s ease;
 }
 
 .session-card .btn:hover {
-  box-shadow: inset 0 0 25px rgba(68, 138, 255, 0.40);
+  box-shadow: inset 0 0 25px var(--card-hue, var(--glow-blue));
 }
 
-/* Session card container — strip the Card wrapper's outer halo/glow so the
-   ONLY light on the card comes from the inset shadows (the inner glow).
-   No external blue halo, no blue border, no gradient, no glass. */
+/* Restore CTA — the real Restore button rendered in SessionList (class
+   "restore-btn"). Its fill is set inline to rgb(var(--box-<hue>)); here we
+   add ONLY the inner glow in that SAME hue: 15px, deepening to 25px on
+   hover. Size and layout stay untouched — the light is trapped inside the
+   button, never cast outside it. */
+.session-card .restore-btn {
+  box-shadow: inset 0 0 15px var(--card-hue, var(--glow-blue));
+}
+
+.session-card .restore-btn:hover {
+  box-shadow: inset 0 0 25px var(--card-hue, var(--glow-blue));
+}
+
+/* ⋯ MENU on a session card — the ui/ "drop-down page" mock. The panel wears
+   the SAME trapped-hue glow as the card it belongs to (inherited --card-hue)
+   plus the dark inner lip, so the dropdown itself is lit from inside: an
+   INNER SHADOW inside the dropdown, not a flat grey box. One soft outer drop
+   is kept only to lift it off the cards underneath. */
+.session-card .card-menu {
+  background: #14141a !important;
+  /* 1px transparent (was `none`) — light's menu wears a 1px #e0e0e0 border;
+     dark reserves the same pixel so the panel is identically sized. */
+  border: 1px solid transparent !important;
+  box-shadow:
+    inset 0 0 25px var(--card-hue, var(--glow-pink)),
+    inset 0 0 8px var(--card-hue, var(--glow-pink)),
+    inset 0 0 12px rgba(0, 0, 0, 0.6),
+    0 10px 24px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Row feedback inside the panel — the glow already owns the edges, so the
+   hover wash is a plain light tint that reads on any hue. */
+.session-card .card-menu button:hover { background-color: rgba(255, 255, 255, 0.07); }
+
+/* ── PRIMARY SAVE CTA — "Save current tabs" ─────────────────────────────
+   BRAND BLUE (green removed on request): dark wears Google dark-theme
+   blue #8AB4F8 with the mock's RECESSED inner shadow (inset-only wash +
+   top lip, hover deepens via brightness); light repaints it SOLID #1A73E8
+   in the light section below. White ink on the fill (Google button). */
+.save-btn {
+  background-color: #8ab4f8;
+  color: rgb(var(--c-accent-ink));   /* Google ink on blue fills — both modes */
+  box-shadow:
+    inset 0 0 15px rgba(0, 0, 0, 0.30),
+    inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 150ms ease, filter 150ms ease;
+}
+
+.save-btn:hover {
+  filter: brightness(0.95);
+  box-shadow:
+    inset 0 0 22px rgba(0, 0, 0, 0.42),
+    inset 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.save-btn:active {
+  filter: brightness(0.9);
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.50),
+    inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* Session card container — strip the Card wrapper's border/fill so the card
+   is a flat #18181c surface and the ONLY light on it comes from the inset
+   shadows declared in the .session-card rule above (no external halo, no
+   blue border, no gradient, no glass). NB: the inset box-shadow lives in
+   the FIRST .session-card rule — never kill it here. */
 .session-card {
-  box-shadow: none !important;
-  border: none !important;
-  background: #18181c !important;
+  /* 1px TRANSPARENT border (was `none`) — the light theme paints a 1px hue
+     hairline on these cards, so dark must reserve the same 1px or every
+     card changes size on a theme toggle. Transparent = borderless look. */
+  border: 1px solid transparent !important;
+  background: var(--card-bg) !important;
   border-radius: 14px !important;
 }
 
@@ -308,14 +477,18 @@
     overflow: hidden;
   }
   html {
-    /* Flat near-black page — hierarchy comes from surface steps, not
-       gradients or glow washes. */
     background-image: none;
   }
   body {
     @apply text-textMain antialiased;
     font-family: Inter, system-ui, sans-serif;
+    background-image: none;
   }
+}
+
+html:not(.dark),
+html:not(.dark) body {
+  background-image: none;
 }
 
 /* Custom scrollbar (thin, unobtrusive) */
@@ -332,4 +505,498 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--c-text-muted) / 0.6);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIGHT MODE — ui/lightmode.png structure. Everything is scoped to
+   `html:not(.dark)`; the brand accent is GOOGLE BLUE (green removed on
+   request) — tonal blue for selection, solid blue for primary actions:
+     · white page · white session cards (Google-web pass) · hairline borders
+     · tonal #D3E3FD active pill (blue ink) · #DBD8D8 inactive pills
+     · full-bleed hairline under the nav · SOLID #1A73E8 recessed save CTA
+     · tinted trio pills with resting amber/periwinkle/magenta rims
+     · white search field, 2px near-black outline, rounded corners
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Nav row: the mock draws a full-bleed hairline directly under the pills
+   on BOTH pages (it crosses the panel padding). Negative margins pull the
+   border edge-to-edge; padding keeps the pills centered.
+   GEOMETRY IS SHARED BY BOTH THEMES (user request: toggling light/dark must
+   never move the layout — only paint may differ). Only the hairline COLOUR
+   is themed: light #ededed, dark transparent → dark keeps its borderless
+   look while occupying the exact same box. ── */
+.nav-row {
+  margin-inline: -20px;              /* full-bleed — beyond the p-5 content box */
+  padding-inline: 20px;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1.5px solid transparent;
+}
+html:not(.dark) .nav-row { border-bottom-color: #ededed; }
+
+/* ── Nav pills — CAPSULE in the mock (r ≈ h/2). Active = Google's TONAL
+   selection (#D3E3FD fill + #0B57D0 ink, Gmail-chip style); inactive =
+   flat grey #DBD8D8, borderless, dark label (measured #3F3E3E). ── */
+html:not(.dark) .nav-pill { border-radius: 999px; }
+/* The active pill has no border class — paint a transparent 1px border in
+   BOTH themes so it keeps the same 30px height as the inactive pills (the
+   row stays even, and toggling the theme never resizes a pill). */
+.nav-pill.is-active { border: 1px solid transparent; }
+html:not(.dark) .nav-pill.is-active { background-color: #d3e3fd; color: #0b57d0; }
+html:not(.dark) .nav-pill:not(.is-active) {
+  background-color: #dbd8d8;
+  border-color: transparent;
+  color: #2f2f2f;
+}
+html:not(.dark) .nav-pill:not(.is-active):hover { color: #18181b; }
+
+/* ── Save CTA wrapper — the mock has NO visible box around the button: a
+   bare pill on white. The wrapper only loses fill + border in light; the
+   p-3 padding + 1px border stay so the box is EXACTLY the same size in both
+   themes (theme toggle must never move the CTA). ── */
+html:not(.dark) .save-cta-box {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* ── PRIMARY SAVE CTA — SOLID Google blue #1A73E8 (green removed on
+   request), keeping the recessed inset language: darker-blue wash + top
+   lip, one blue step deeper on hover / active. White ink (Google button). ── */
+html:not(.dark) .save-btn {
+  background-color: #1a73e8;
+  box-shadow:
+    inset 0 0 14px rgb(11 87 208 / 0.55),
+    inset 0 2px 3px rgb(4 30 73 / 0.35);
+}
+html:not(.dark) .save-btn:hover {
+  background-color: #1967d2;
+  box-shadow:
+    inset 0 0 18px rgb(10 78 190 / 0.6),
+    inset 0 2px 3px rgb(4 30 73 / 0.4);
+}
+html:not(.dark) .save-btn:active {
+  background-color: #185abc;
+  box-shadow:
+    inset 0 0 22px rgb(9 70 172 / 0.65),
+    inset 0 2px 4px rgb(4 30 73 / 0.45);
+}
+
+/* ── STATUS TRIO — three pills, each lit by a DIFFERENT hue from the
+   inside (mock: Save tabs = amber, All windows = blue, Auto save = pink). ── */
+/* Mock-measured trio: each pill wears the mock's tint fill + a RESTING
+   colored rim (amber / periwinkle / magenta — sampled from lightmode.png);
+   hover deepens the rim and the inset. `order` (mock layout: Save first)
+   is SHARED by both themes — a light-only reorder made the pills swap
+   places on every theme toggle. */
+.save-mini { order: 1; }
+.scope-btn { order: 2; }
+html:not(.dark) .save-mini {
+  background-color: #feedd6;
+  color: #1f1f24;
+  border-width: 1px;   /* Button has no border class in its primary variant */
+  border-color: rgb(200 162 0 / 0.45);
+  box-shadow: inset 0 0 13px rgb(253 226 147 / 0.9);
+}
+html:not(.dark) .save-mini:hover {
+  border-color: rgb(200 162 0 / 0.8);
+  box-shadow: inset 0 0 17px rgb(253 226 147 / 1);
+}
+html:not(.dark) .scope-btn {
+  background-color: #d6d9fe;
+  color: #1f1f24;
+  border-color: rgb(80 120 200 / 0.4);
+  box-shadow: inset 0 0 13px rgb(179 191 254 / 0.9);
+}
+html:not(.dark) .scope-btn:hover {
+  border-color: rgb(80 120 200 / 0.7);
+  box-shadow: inset 0 0 17px rgb(179 191 254 / 1);
+}
+html:not(.dark) .auto-btn.is-on {
+  background-color: #fed6f7;
+  color: #1f1f24;
+  border-color: rgb(214 45 175 / 0.35);
+  box-shadow: inset 0 0 13px rgb(250 174 231 / 0.9);
+}
+html:not(.dark) .auto-btn.is-on:hover {
+  border-color: rgb(214 45 175 / 0.65);
+  box-shadow: inset 0 0 17px rgb(250 174 231 / 1);
+}
+/* The ON dot joins the pill's hue in light; OFF keeps its neutral grey. */
+html:not(.dark) .auto-btn.is-on .auto-dot { background-color: #c6009e; }
+
+/* ── SEARCH — the mock's signature: 2px outline + very rounded (r ≈ 0.4 ×
+   height). BORDER WIDTH + RADIUS are shared by both themes so the field
+   never changes size on a theme toggle (dark keeps its token border colour
+   via `surface`); light repaints it white with a near-black 2px outline,
+   grey placeholder #707070. Focus keeps the outline and adds a ring. ── */
+.search-input { border-width: 2px; border-radius: 14px; }
+html:not(.dark) .search-input {
+  background-color: #ffffff;
+  border: 2px solid #101010;
+  border-radius: 14px;
+}
+html:not(.dark) .search-input::placeholder { color: #707070; }
+html:not(.dark) .search-input:focus {
+  border-color: #101010;
+  outline: 2px solid rgb(var(--c-accent) / 0.6);
+  outline-offset: 1px;
+}
+html:not(.dark) .search-icon { color: #3f3f46; }
+
+/* ── SESSION CARD ("session tabs") — light. (History: white interior →
+   trapped hue glow → now the GOOGLE-WEB PASS below: hairline + whisper.) ── */
+/* ── SESSION CARD (light) — GOOGLE-WEB PASS (user request: card colors
+   toned down to feel like a Google website): a clean Gmail/Drive-style
+   WHITE row — 1px hairline hue border, 12px radius, the hue reduced from a
+   trapped glow to a WHISPER wash (5%) so colour reads as a subtle label;
+   hover gets Google's signature elevation shadow (row-lift). ── */
+html:not(.dark) .session-card {
+  background: #ffffff !important;
+  border: 1px solid rgb(var(--hue-rgb, 250 210 207) / 0.3) !important;
+  border-radius: 12px !important;
+  color: var(--text-main);
+  background-image: linear-gradient(rgb(var(--hue-rgb, 250 210 207) / 0.05), rgb(var(--hue-rgb, 250 210 207) / 0.05)) !important;
+  box-shadow: 0 1px 2px rgb(60 64 67 / 0.1) !important;
+}
+html:not(.dark) .session-card:hover {
+  border-color: rgb(var(--hue-rgb, 250 210 207) / 0.5) !important;
+  box-shadow:
+    0 1px 2px rgb(60 64 67 / 0.1),
+    0 2px 6px 2px rgb(60 64 67 / 0.08) !important;
+}
+
+/* Expanded link rows — recessed band, lighter than the dark theme's (the
+   light interior recesses with a soft grey wash instead of black). */
+html:not(.dark) .session-card .tab-item {
+  background-color: rgb(0 0 0 / 0.13);
+  box-shadow: inset 0 0 8px rgb(0 0 0 / 0.10);
+}
+html:not(.dark) .session-card .tab-title { color: #18181b; }
+
+/* ── RESTORE PILL — Google's two-tone tint system, toned to the WEB PASS:
+   the card is near-white now (whisper wash), so the pill wears LEVEL-2 of
+   its hue — the Gmail-chip tint — with dark ink on every pill. ── */
+html:not(.dark) .box-pink   { --hue-fill: #fad2cf; --hue-ink: #1f1f24; --hue-core: 226 131 128; }
+html:not(.dark) .box-blue   { --hue-fill: #d2e3fc; --hue-ink: #1f1f24; --hue-core: 127 177 243; }
+html:not(.dark) .box-orange { --hue-fill: #ffe0be; --hue-ink: #1f1f24; --hue-core: 245 174 109; }
+html:not(.dark) .box-purple { --hue-fill: #e9d7fb; --hue-ink: #1f1f24; --hue-core: 201 148 248; }
+html:not(.dark) .box-yellow { --hue-fill: #fde293; --hue-ink: #1f1f24; --hue-core: 251 201 81; }
+html:not(.dark) .box-green  { --hue-fill: #ceeAD6; --hue-ink: #1f1f24; --hue-core: 127 193 146; }
+.session-card .restore-btn {
+  background-color: var(--hue-fill, rgb(var(--box-blue)));
+  color: var(--hue-ink, #ffffff);
+}
+
+/* Meta chip — the mock shows PLAIN grey meta text in light mode (no pill).
+   Dark keeps its hue chip (declared in the base .saved-chip rule below). */
+.saved-chip {
+  /* Dark: WHITE text on the hue-tinted pill — hue-ink was card-dependent
+     (dark ink on pink → unreadable on the dark chip). Hue stays on bg/border. */
+  color: #ffffff;
+  background-color: rgb(var(--hue-rgb, var(--box-pink)) / 0.12);
+  border-color: rgb(var(--hue-rgb, var(--box-pink)) / 0.3);
+}
+html:not(.dark) .saved-chip {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-muted, #71717a);
+  font-weight: 500;
+}
+
+/* ── CARD ⋯ MENU — white panel lit by the same trapped hue + one soft drop
+   to lift it off the cards; hover rows need a DARK tint on white. ── */
+html:not(.dark) .session-card .card-menu {
+  /* Google menu surface: white + hairline + the Material menu shadow —
+     the hue glow is dropped here too (web pass). */
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow:
+    0 1px 2px rgb(60 64 67 / 0.15),
+    0 4px 12px rgb(60 64 67 / 0.12) !important;
+}
+html:not(.dark) .session-card .card-menu button:hover {
+  background-color: rgb(0 0 0 / 0.06);
+}
+
+/* ── ORGANIZER WINDOW CARDS (light) — GOOGLE-WEB PASS, mirroring the
+   session card's light treatment: white interior + hue hairline + 5% whisper
+   wash + row-lift elevation. Color still comes from the card's box-* class
+   (--hue-rgb). Dark keeps the trapped inner glow untouched; in LIGHT the
+   inner-shadow look is removed entirely (user request) — no inset shadow
+   anywhere on this card. ── */
+html:not(.dark) .inner-glow-window {
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  background-image: linear-gradient(
+    rgb(var(--hue-rgb, 250 210 207) / 0.05),
+    rgb(var(--hue-rgb, 250 210 207) / 0.05)
+  ) !important;
+  border: 1px solid rgb(var(--hue-rgb, 250 210 207) / 0.3) !important;
+  box-shadow: var(--shadow-premium) !important; /* outer lift only — inner glow removed */
+}
+
+/* ── SETTINGS / RECOVERY SECTIONS — REFERENCE GRADIENT (the pastel
+   "Reminder" card, user request): the panel is a full same-hue BLOOM — a
+   deeper core (--hue-core, per-hue, mixed from the tint + its ink) rising
+   from the top-center and easing to a light tinted edge, instead of a flat
+   surface with only a rim glow. Hue comes from the section's own box-*
+   class (--hue-rgb / --hue-core); dark ink stays readable because every
+   core is a mid-light tint. ── */
+html:not(.dark) .inner-glow-section {
+  /* !important on the paint props: the base flat-interior rule forces
+     `background-image: none` + `border: none` (dark-mode recipe). */
+  border-radius: 18px !important;
+  border: 1px solid rgb(var(--hue-rgb, 250 210 207) / 0.35) !important;
+  background-color: #ffffff !important;
+  background-image:
+    radial-gradient(125% 95% at 50% -12%,
+      rgb(var(--hue-core, 226 131 128)) 0%,
+      rgb(var(--hue-rgb, 250 210 207) / 0.55) 38%,
+      rgb(var(--hue-rgb, 250 210 207) / 0.2) 70%,
+      rgb(var(--hue-rgb, 250 210 207) / 0.05) 100%) !important;
+  box-shadow:
+    inset 0 0 24px rgb(var(--hue-rgb, 250 210 207) / 0.25),
+    var(--shadow-premium) !important;
+}
+
+/* ── SETTINGS / RECOVERY SECTIONS — DARK TWIN of the light reference
+   gradient: the same top-center bloom over the #18181c interior, but the
+   core is the DARK hue's saturated neon (--hue-rgb flips to the neon set in
+   .dark) easing to the flat surface at the edges — the trapped-light
+   language, now as a full gradient. ── */
+.dark .inner-glow-section {
+  border-radius: 18px !important;
+  border: 1px solid rgb(var(--hue-rgb, 251 0 205) / 0.35) !important;
+  background-color: #18181c !important;
+  background-image:
+    radial-gradient(125% 95% at 50% -12%,
+      rgb(var(--hue-rgb, 251 0 205) / 0.5) 0%,
+      rgb(var(--hue-rgb, 251 0 205) / 0.22) 38%,
+      rgb(var(--hue-rgb, 251 0 205) / 0.08) 70%,
+      rgb(var(--hue-rgb, 251 0 205) / 0.02) 100%) !important;
+  box-shadow:
+    inset 0 0 24px rgb(var(--hue-rgb, 251 0 205) / 0.18),
+    inset 0 2px 8px rgb(0 0 0 / 0.45),
+    var(--shadow-premium) !important;
+}
+
+/* Group-header band (light) — the hue RETURNS as a soft tonal band (user
+   request: group colours were invisible in light mode — the web pass had
+   flattened these to transparent). Each band wears the SAME level-2 Google
+   tint the rest of the light theme uses (--glow-* light tokens: #D2E3FC
+   blue · #FAD2CF pink · #FFE0BE orange · #CEEAD6 green · #E9D7FB purple),
+   so colour identity reads on the white card. Flat like every other light
+   surface — the dark theme's inset shadow stays removed. */
+html:not(.dark) .inner-glow-green  { background-color: var(--glow-green); }
+html:not(.dark) .inner-glow-purple { background-color: var(--glow-purple); }
+html:not(.dark) .inner-glow-blue   { background-color: var(--glow-blue); }
+html:not(.dark) .inner-glow-orange { background-color: var(--glow-orange); }
+html:not(.dark) .inner-glow-pink,
+html:not(.dark) .inner-glow-default { background-color: var(--glow-pink); }
+html:not(.dark) .inner-glow-green,
+html:not(.dark) .inner-glow-purple,
+html:not(.dark) .inner-glow-blue,
+html:not(.dark) .inner-glow-pink,
+html:not(.dark) .inner-glow-orange,
+html:not(.dark) .inner-glow-default {
+  box-shadow: none;
+}
+
+/* ── ORGANIZER TAB ROWS (light) — flat recessed capsules on the WHITE card:
+   a light wash instead of the dark theme's inset-shadowed bands (user
+   request: inner-shadow look removed in light). Selection / drag-over keeps
+   its accent tonal, shadowless. The ungroup strip stays unfilled (mock). ── */
+html:not(.dark) .tab-row {
+  background-color: rgb(0 0 0 / 0.07);
+  border-radius: 999px;
+  box-shadow: none;
+}
+html:not(.dark) .tab-row:hover { background-color: rgb(0 0 0 / 0.11); }
+html:not(.dark) .tab-row.bg-accent\/10 {
+  background-color: rgb(var(--c-accent) / 0.16);
+  box-shadow: none;
+}
+html:not(.dark) .ungroup-strip { background-color: transparent; box-shadow: none; }
+html:not(.dark) .ungroup-strip.bg-accent\/10 {
+  background-color: rgb(var(--c-accent) / 0.45);
+  box-shadow: inset 0 0 8px rgb(var(--c-accent) / 0.25);
+}
+
+/* "+ New group" — dark ink in the mock (the dark theme keeps white). */
+html:not(.dark) .new-group-btn { color: #1f1f24; }
+html:not(.dark) .new-group-btn:hover { color: #000000; }
+
+/* ── TOGGLE SWITCHES (Settings) — light translation: soft grey track when
+   off, the measured pastels when on. ── */
+html:not(.dark) .toggle-switch {
+  background-color: #d9d9de;
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.18);
+}
+html:not(.dark) .toggle-switch.on.pink {
+  background-color: #cb5fa9;
+  box-shadow: inset 0 0 15px rgb(203 95 169 / 0.8);
+}
+html:not(.dark) .toggle-switch.on.blue {
+  background-color: #4c55a8;
+  box-shadow: inset 0 0 15px rgb(76 85 168 / 0.8);
+}
+html:not(.dark) .toggle-switch.on.orange {
+  background-color: #c08a3f;
+  box-shadow: inset 0 0 15px rgb(192 138 63 / 0.8);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM — soft Google/Material-style motion (user request)
+   Curves + durations follow Material's published motion tokens:
+     · standard        cubic-bezier(0.2, 0, 0, 1)   — state changes, menus
+     · decelerate      cubic-bezier(0, 0, 0, 1)     — entrances (soft landings)
+     · accelerate      cubic-bezier(0.3, 0, 1, 1)   — exits
+     · emphasized      cubic-bezier(0.05, 0.7, 0.1, 1) — prominent entrances
+                       (dialogs, toasts, page views — the "Google feel")
+   Durations: 150ms feedback · 180–280ms menus/dialogs/toasts · 260ms page
+   views · 320ms entrances · stagger 40–60ms (Material grid guidance).
+   Everything animates transform + opacity ONLY (compositor-friendly, per
+   web.dev). Entrance utilities use fill-mode `both`, so elements are hidden
+   until their (staggered) delay — and end at `transform: none`, which never
+   breaks the ⋯ menu's `position: fixed` (a transformed ancestor would —
+   see the SessionList comment about that historical bug). Session cards
+   deliberately get NO hover-lift for the same reason; press states live on
+   leaf controls only. `prefers-reduced-motion` disables all of it below.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+@keyframes orbRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes orbViewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes orbFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes orbMenuIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes orbDialogIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes orbBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Toasts sit at left-1/2 with Tailwind's -translate-x-1/2 — the keyframes
+   must carry that -50% X themselves (a keyframe transform replaces the
+   class's transform), so the toast never jumps off-center. */
+@keyframes orbToastIn {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(0.98); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* Auto-save ON dot — the gentle "alive" ring pulse Google-style status
+   dots use. Very soft (45% → 0 alpha ring, 2.4s), ON state only. */
+@keyframes orbDotPing {
+  0%   { box-shadow: 0 0 0 0 rgb(34 197 94 / 0.45); }
+  70%  { box-shadow: 0 0 0 5px rgb(34 197 94 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0); }
+}
+
+/* ── Entrance utilities — `.rise` staggers via the --d custom property
+   (set inline: style={{ '--d': '120ms' }}). ── */
+.rise {
+  animation: orbRise 320ms var(--ease-decelerate) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Page views (Sessions / Organizer / Settings) — the components remount on
+   switch, so this replays as a soft cross-fade-up every time. */
+.view-enter { animation: orbViewIn 260ms var(--ease-decelerate) both; }
+
+/* Small conditional blocks (expanded links, chips) — opacity only. */
+.fade-in { animation: orbFadeIn 200ms var(--ease-standard) both; }
+
+/* ⋯ dropdown — Material menu: quick scale-in on the standard curve. */
+.menu-in { animation: orbMenuIn 180ms var(--ease-standard) both; transform-origin: center; }
+
+/* Confirm dialog — emphasized entrance (the Google "featured" feel). */
+.dialog-in { animation: orbDialogIn 240ms var(--ease-emphasized) both; }
+.backdrop-in { animation: orbBackdropIn 180ms var(--ease-standard) both; }
+
+/* Feedback + undo toasts — emphasized slide-up from the bottom edge. */
+.toast-in { animation: orbToastIn 280ms var(--ease-emphasized) both; }
+
+/* Auto-save ON dot — soft breathing ring (matches the light-mode pink via
+   the pill's own hue? no — the dot stays green/pink per theme; pulse is
+   colourless alpha, so it works on both). */
+.auto-btn.is-on .auto-dot { animation: orbDotPing 2.4s var(--ease-standard) infinite; }
+
+/* ── Buttons pass 2 (user request): soft hover LIFT for the action pills
+   (Restore / Auto-save / Save-mini / All-windows) and a gentle scale for
+   icon-only buttons (theme, pen, expand, ⋯). NB: these transforms live on
+   the BUTTONS only — never on cards, so the ⋯ menu's position:fixed stays
+   safe (the menu is a sibling of the ⋯ button, not its child). ── */
+.restore-btn, .auto-btn, .save-mini, .scope-btn {
+  transition:
+    transform 200ms var(--ease-standard),
+    box-shadow 200ms var(--ease-standard),
+    color 150ms var(--ease-standard),
+    background-color 150ms var(--ease-standard),
+    border-color 150ms var(--ease-standard);
+}
+.restore-btn:hover, .auto-btn:hover, .save-mini:hover, .scope-btn:hover {
+  transform: translateY(-1px);
+}
+.icon-btn {
+  transition: transform 200ms var(--ease-standard), color 150ms var(--ease-standard), background-color 150ms var(--ease-standard);
+}
+.icon-btn:hover { transform: scale(1.12); }
+.icon-btn:active { transform: scale(0.9); }
+
+/* ── Saved links CLOSE (user request): the block stays mounted for 180ms
+   so the exit can play — Material-style fade + lift-away on the accelerate
+   curve, then React unmounts it (SessionList's closing state owns the
+   timing). ── */
+@keyframes orbCollapse {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+.collapse-out {
+  animation: orbCollapse 180ms var(--ease-accelerate) both;
+  pointer-events: none;
+}
+
+/* ── Press states — Material's restrained tactile feedback on leaf
+   controls ONLY (never on cards: a transformed ancestor would break the
+   ⋯ menu's position: fixed). ── */
+.save-btn {
+  transition: box-shadow 150ms var(--ease-standard), filter 150ms var(--ease-standard), transform 150ms var(--ease-standard);
+}
+.save-btn:active { transform: scale(0.985); }
+.session-card .restore-btn:active { transform: scale(0.97); }
+.nav-pill { transition: color 150ms var(--ease-standard), background-color 150ms var(--ease-standard), border-color 150ms var(--ease-standard), transform 150ms var(--ease-standard); }
+.nav-pill:active { transform: scale(0.96); }
+
+/* ── Reduced motion — honor the OS setting: every animation/transition
+   collapses to an instant state change (Google + a11y guidance). ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

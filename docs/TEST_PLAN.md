@@ -233,13 +233,15 @@ Design-system contract (all themes — check while testing Test P):
 - Shell: 420×640, rounded, overflow hidden; dark page paint extends into
   every corner (zero white pixels outside the rounded shell).
 - Surfaces: flat fills + thin borders only — no glassmorphism, no gradients,
-  no glow washes. Neon green is an ACCENT (active pill, CTA, toggles,
-  Restore), never a large background.
+  no glow washes. Neon green is an ACCENT (active pill, CTA, toggles),
+  never a large background.
 - Color meaning: purple/magenta = session identity · blue = secondary ·
   green = primary actions · yellow/orange = recovery/warnings (AUTO badge
-  wears gold: system-managed state) · red = destructive.
+  wears gold: system-managed state) · red = destructive. Each session
+  card's identity hue is shared by its border, bar AND Restore button.
 - Cards: dark interior + colored thin border + 3px left bar + subtle
-  same-hue glow (`.box-glow-*` utilities — the glow's single owner).
+  same-hue glow (`.box-glow-*` utilities — the glow's single owner);
+  the Restore button wears the card's hue (dark ink on the fill).
 - Dark base is `#0A0A10` (black with the ui/ reference's blue cast); light
   mode is a true translation — same structure, swapped surfaces only.
 
@@ -354,3 +356,36 @@ any mismatch is a bug to file before V1 freeze.
 
 Pass criteria: steps 1–6 all match, popup never blank, no console errors in
 the popup or the worker.
+
+---
+
+## V1.7 — SaaS round manual matrix (billing, dashboard, shares)
+
+Automated E2E (W11 / D8) already proves the webhook, entitlement, version and
+share machinery on both backends. What only a human with real accounts can do:
+
+1. **Lemon Squeezy checkout (once credentials exist).** Set
+   `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_ID`,
+   `LEMONSQUEEZY_WEBHOOK_SECRET` on the Worker, set the webhook URL to
+   `https://<api-origin>/api/billing/webhook` in the LS dashboard, then: Settings
+   → Upgrade → checkout opens in a new tab → pay (or use LS test mode) → the plan
+   card flips to **Pro** after the webhook lands, and the "You're on Pro" email
+   arrives. Cancel in the LS portal → plan returns to Free after
+   `subscription_expired`, with the "plan changed" email.
+2. **Dashboard walkthrough (real Chrome).** Open the privacy-site
+   `/dashboard.html`, sign in with an extension account, confirm sessions +
+   folders + search match the popup, open a tab link, export CSV, and confirm the
+   plan chip matches Settings.
+3. **Share → claim across two accounts.** Popup → card ⋯ → Share… → copy link →
+   open it in the dashboard signed in as a DIFFERENT account → Import → the copy
+   appears with the same name/tags; importing again says "already in your
+   library"; the sharer's copy is untouched.
+4. **Version restore across devices.** Edit a synced session on device A (rename
+   counts) → popup on A: card ⋯ → History… → restore the older snapshot → within
+   one sync cycle device B shows the restored name/content.
+5. **Honesty checks with billing OFF (no LS credentials).** Upgrade says
+   "Payments are not live on this server yet"; nothing was charged; sync and
+   everything else keep working.
+
+Pass criteria: all five match, no console errors in popup/dashboard/SW, and the
+server logs show no PII beyond the existing aggregate metrics line.

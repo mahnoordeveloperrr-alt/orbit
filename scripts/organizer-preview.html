@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Orbitabs — Organizer visual preview (dev harness)</title>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  // chrome.* mock — just enough for the REAL popup to mount the Organizer
+  // view outside Chrome (promise style for the panel, callback style for
+  // useTabs — the real APIs support both).
+  const withCb = (fn) => (...args) => {
+    const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+    const p = fn(...args);
+    if (cb) p.then(cb);
+    return p;
+  };
+
+  const GROUPS = [
+    { id: 101, windowId: 1, title: 'Research', color: 'blue', collapsed: false },
+    { id: 102, windowId: 1, title: 'Design refs', color: 'pink', collapsed: false },
+    { id: 201, windowId: 2, title: 'Watching', color: 'orange', collapsed: false },
+  ];
+  const mkTab = (id, windowId, title, url, groupId, pinned) =>
+    ({ id, windowId, title, url, groupId, pinned: !!pinned });
+
+  const WINDOWS = [
+    {
+      id: 1, focused: true,
+      tabs: [
+        mkTab(11, 1, 'GitHub — Orbitabs', 'https://github.com/orbitabs', -1, true),
+        mkTab(12, 1, 'MDN — CSS box-shadow', 'https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow', 101),
+        mkTab(13, 1, 'Web.dev — CSS effects', 'https://web.dev/learn/css/box-shadow', 101),
+        mkTab(14, 1, 'Dribbble — UI glow shots', 'https://dribbble.com/tags/glow', 102),
+        mkTab(15, 1, 'Session specs — Figma', 'https://figma.com/file/session-specs', 102),
+        mkTab(16, 1, 'Inbox (42)', 'https://mail.example.com', -1),
+        mkTab(17, 1, 'Docs — release checklist', 'https://docs.example.com/release', -1),
+      ],
+    },
+    {
+      id: 2, focused: false,
+      tabs: [
+        mkTab(21, 2, 'YouTube — lo-fi loop', 'https://youtube.com/watch?v=lofi', 201),
+        mkTab(22, 2, 'Hacker News', 'https://news.ycombinator.com', 201),
+        mkTab(23, 2, 'Wikipedia — Box model', 'https://en.wikipedia.org/wiki/CSS_box_model', -1),
+        mkTab(24, 2, 'localhost:5173 — vite', 'http://localhost:5173', -1),
+      ],
+    },
+  ];
+
+  globalThis.chrome = {
+    windows: {
+      getAll: async () => JSON.parse(JSON.stringify(WINDOWS)),
+      getCurrent: async () => JSON.parse(JSON.stringify(WINDOWS[0])),
+    },
+    tabGroups: {
+      query: withCb(async (q) => GROUPS.filter(g => !q?.windowId || g.windowId === q.windowId)
+        .map(g => ({ ...g }))),
+      update: async () => ({}),
+    },
+    tabs: {
+      query: withCb(async () => WINDOWS[0].tabs.map(t => ({ ...t }))),
+      group: async () => 301,
+      ungroup: async () => {},
+      move: async (id) => id,
+      create: async () => ({}),
+      remove: async () => {},
+      update: async () => ({}),
+      duplicate: async () => ({}),
+      sendMessage: async () => ({ ok: false, error: 'preview harness' }),
+    },
+    runtime: {
+      sendMessage: async () => ({ ok: false, error: 'preview harness' }),
+      onMessage: { addListener() {} },
+    },
+    storage: {
+      local: {
+        _db: {},
+        async get(k) { return { [k]: this._db[k] }; },
+        async set(obj) { Object.assign(this._db, obj); },
+        async remove(k) { delete this._db[k]; },
+      },
+    },
+  };
+
+  // dark theme + a couple of saved sessions so the shell looks like the mock
+  try {
+    localStorage.setItem('theme', 'dark');
+    if (!localStorage.getItem('orbi_sessions')) {
+      const mkTabEntry = (t) => ({ title: t.title, url: t.url, pinned: t.pinned, active: false, groupId: null });
+      localStorage.setItem('orbi_sessions', JSON.stringify([
+        {
+          id: 'local-preview-1', name: 'Research sprint', schemaVersion: 1,
+          createdAt: new Date(Date.now() - 12 * 60000).toISOString(),
+          updatedAt: new Date(Date.now() - 12 * 60000).toISOString(),
+          windows: [{ state: 'normal', focused: true, tabs: WINDOWS[0].tabs.map(mkTabEntry), groups: [] }],
+        },
+        {
+          id: 'local-preview-2', name: 'Evening reading', schemaVersion: 1,
+          createdAt: new Date(Date.now() - 3 * 3600000).toISOString(),
+          updatedAt: new Date(Date.now() - 3 * 3600000).toISOString(),
+          windows: [{ state: 'normal', focused: false, tabs: WINDOWS[1].tabs.map(mkTabEntry), groups: [] }],
+        },
+      ]));
+    }
+  } catch (e) { console.warn('preview seed failed', e); }
+</script>
+<script type="module" src="/src/popup/main.jsx"></script>
+</body>
+</html>

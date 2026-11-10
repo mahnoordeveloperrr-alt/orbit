@@ -24,8 +24,8 @@ const store = read('src/services/store.js');
 
 console.log('\n── CLAUSE 1: "organize tabs normally, click Save" ──');
 check('One-click Save button (auto-generated name)', dashboard.includes('handleQuickSave = async () => saveWindowsAs(autoSessionName())'));
-check('Name optional (placeholder says so)', saveSession.includes('Session name (optional)'));
-check('Enter key saves', saveSession.includes("if (e.key === 'Enter') handleSave()"));
+check('Save auto-generates the name (rename later anytime)', saveSession.includes("onSave('')"));
+check('Scope toggle leads the save row (replaced the name input)', dashboard.includes('onScopeChange={setScope}'));
 check('All-windows / current-window scope toggle', saveSession.includes("scope === 'all' ? 'window' : 'all'"));
 check('Rename-later UI (click name to edit)', sessionList.includes('await renameSession(uid, name)'));
 check('renameSession exists in store', store.includes('export async function renameSession'));
@@ -50,7 +50,7 @@ check('Dead URL cannot kill a window (per-tab fallback)', worker.includes('falli
 
 console.log('\n── CLAUSE 4: "without being forced to create an account" ──');
 check('App opens on Dashboard (no login gate)', app.includes("useState('dashboard')"));
-check('Cloud sign-in is explicitly optional in UI', dashboard.includes('Sign in for cloud sync (optional)'));
+check('Cloud sign-in is explicitly optional in UI', settingsPage.includes('Sign in') && settingsPage.includes('already fully protected without it'));
 check('Local store is the default data layer', dashboard.includes("from '../../services/store'"));
 check('Live Backup works logged-out (local upsert)', worker.includes('upsertLocalLiveBackup'));
 check('Auto-save can be toggled off by user', worker.includes('autoSaveEnabled') && settingsPage.includes('settings.autoSave'));

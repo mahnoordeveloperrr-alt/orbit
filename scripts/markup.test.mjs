@@ -1,16 +1,16 @@
 // MARKUP TEST — Orbitabs Markup (V1.1 MVP)
 // ============================================================================
-// Covers (MARKUP_SPEC.md §1–§5):
+// Covers (docs/MARKUP_SPEC.md §1–§5):
 //   1. URL keying    — hash/utm junk collapse to one identity
 //   2. Sanitize      — garbage never crashes; valid marks survive
 //   3. Edit ops      — add / move / clear / cap (snapshot undo lives in the
 //                      overlay; eraseAt returns removed[] verbatim)
 //   5. Worker        — OPEN_MARKUP gated to http/https
-//   6. Manifest      — scripting permission + content script + WAR wiring
+//   6. Manifest      — narrow activeTab/scripting permissions; markup injects on demand
 //   7. Color/overlay — palette, recolor, arrow rendering contract
 //   8. Sticky        — card notes: shape field, resize, shape switching
 //   9. Ink           — text color (textColor): set/reset/live-edit contract
-//  10. Eraser        — eraseAt hit matrix + removed[] for undo/restore
+//  10. Eraser        — RUB-OUT (clip/split strokes, cut bands) + removed[]
 // ============================================================================
 
 import vm from 'node:vm';
@@ -70,6 +70,18 @@ console.log('\n── 2. Sanitize matrix ──');
     M.sanitizeAnnotation({ type: 'text', rect: { x: 1, y: 1 }, text: 'x'.repeat(900) })?.text.length === 500);
   ok('garbage fields coerced (string x → number)',
     typeof M.sanitizeAnnotation({ type: 'rect', rect: { x: '12' } })?.rect.x === 'number' || M.sanitizeAnnotation({ type: 'rect', rect: { x: '12' } }) === null);
+  // scroll-anchor snapshot: numeric sx/sy survive sanitize (els are
+  // runtime-only element refs — never trusted from untrusted data)
+  const anchored = M.sanitizeAnnotation({
+    type: 'rect', rect: { x: 1, y: 2, w: 3, h: 4 },
+    anchor: { sx: [10.6, 0], sy: [3.2, 0], els: 'junk' }
+  });
+  ok('anchor numeric snapshot kept + rounded',
+    anchored?.anchor?.sx?.[0] === 11 && anchored?.anchor?.sy?.[0] === 3);
+  ok('anchor mismatched/garbage arrays rejected (no phantom offsets)',
+    !M.sanitizeAnnotation({ type: 'rect', rect: { x: 1, y: 1 }, anchor: { sx: [1], sy: [] } })?.anchor &&
+    !M.sanitizeAnnotation({ type: 'rect', rect: { x: 1, y: 1 }, anchor: { sx: ['a'], sy: ['b'] } })?.anchor &&
+    !M.sanitizeAnnotation({ type: 'rect', rect: { x: 1, y: 1 } })?.anchor);
 }
 
 /* ================================================================== *
@@ -161,6 +173,12 @@ console.log('\n── 3c. Color ──');
   ok('non-hex color rejected (safe no-op)', M.setAnnotationColor(doc, doc.annotations[0].id, 'red').updated === false);
   ok('unknown id rejected (safe no-op)', M.setAnnotationColor(doc, 'nope', '#22c55e').updated === false);
   ok('null doc rejected (safe no-op)', M.setAnnotationColor(null, 'x', '#22c55e').updated === false);
+  ok('8-digit hex (palette alpha) accepted + survives sanitize roundtrip',
+    M.setAnnotationColor(doc, doc.annotations[0].id, '#22c55e80').updated === true &&
+    M.setAnnotationColor(doc, doc.annotations[0].id, '#22c55e80').doc.annotations[0].color === '#22c55e80' &&
+    M.sanitizeAnnotation({ type: 'rect', rect: { x: 1, y: 1 }, color: '#22c55e80' }).color === '#22c55e80');
+  ok('7-digit hex still rejected (safe no-op)',
+    M.setAnnotationColor(doc, doc.annotations[0].id, '#ff0000f').updated === false);
   ok('neighbors untouched by a recolor', M.setAnnotationColor(doc, doc.annotations[0].id, '#22c55e').doc.annotations[1].color === '#111827');
 }
 
@@ -175,6 +193,13 @@ console.log('\n── 3d. Sticky notes ──');
 
   const s = M.sanitizeAnnotation({ type: 'sticky', rect: { x: 5, y: 5, w: 120, h: 90 }, text: ' todo ', shape: 'circle', color: '#22c55e' });
   ok('sticky kept with text + shape', s && s.text === 'todo' && s.shape === 'circle');
+  // draw direction: up-left drags must not collapse shapes — arrows keep
+  // the sign (direction), everything else normalizes to a positive box
+  const upLeftRect = M.sanitizeAnnotation({ type: 'rect', rect: { x: 100, y: 100, w: -60, h: -40 } });
+  ok('up-left rect normalizes to a positive box', upLeftRect.rect.w === 60 && upLeftRect.rect.h === 40 && upLeftRect.rect.x === 40 && upLeftRect.rect.y === 60);
+  const upLeftArrow = M.sanitizeAnnotation({ type: 'arrow', rect: { x: 100, y: 100, w: -60, h: -40 } });
+  ok('up-left arrow keeps its SIGNED direction', upLeftArrow.rect.w === -60 && upLeftArrow.rect.h === -40 && upLeftArrow.rect.x === 100);
+  ok('down-right rect unchanged', M.sanitizeAnnotation({ type: 'rect', rect: { x: 10, y: 10, w: 60, h: 40 } }).rect.w === 60);
   ok('sticky without body text → null (a blank note is nothing)', M.sanitizeAnnotation({ type: 'sticky', rect: { x: 1, y: 1 } }) === null);
   ok('sticky with unknown shape falls back to rect', M.sanitizeAnnotation({ type: 'sticky', rect: { x: 1, y: 1 }, text: 'x', shape: 'hexagon' }).shape === 'rect');
   ok('circle TOOL is always a circle', M.sanitizeAnnotation({ type: 'circle', rect: { x: 1, y: 1, w: 9, h: 9 } }).shape === 'circle');
@@ -207,8 +232,8 @@ console.log('\n── 3d. Sticky notes ──');
   ok('sticky body text never becomes empty', M.setAnnotationText(M.addAnnotation(M.emptyDoc('u'), { type: 'sticky', rect: { x: 1, y: 1 }, text: 'body' }).doc, M.addAnnotation(M.emptyDoc('u'), { type: 'sticky', rect: { x: 1, y: 1 }, text: 'body' }).doc.annotations[0].id, '').updated === false);
 
   ok('erase + select share ONE hit implementation',
-    read('public/markup-core.js').includes('function hitsMark') &&
-    read('public/markup-overlay.js').includes('M.hitsMark(anns[i], x, y, PICK_SLOP)'));
+    /hitsMark\(a, ax, ay, R\)/.test(read('public/markup-core.js')) && // eraser, per-mark space
+    read('public/markup-overlay.js').includes('M.hitsMark(a, s.x, s.y, PICK_SLOP)')); // select, same space
 }
 
 /* ================================================================== *
@@ -237,12 +262,17 @@ console.log('\n── 3e. Ink (text color) ──');
 }
 
 /* ================================================================== *
- * 3f. Eraser — click/drag removal, radius, undo-friendly removed[]
+ * 3f. Eraser — RUB-OUT removal (clip/split strokes, cut bands), radius,
+ *     undo-friendly removed[]
  * ================================================================== */
 console.log('\n── 3f. Eraser ──');
 {
   const M = loadCore();
   ok('eraser radius exported', M.ERASER.RADIUS > 0);
+  ok('hitsMark EXPORTED (the overlay\u0027s select hit-test calls M.hitsMark)', typeof M.hitsMark === 'function');
+  ok('hitsMark hits a rect inside radius', M.hitsMark({ type: 'rect', rect: { x: 0, y: 0, w: 10, h: 10 } }, 5, 5, 0));
+  ok('hitsMark misses outside', !M.hitsMark({ type: 'rect', rect: { x: 0, y: 0, w: 10, h: 10 } }, 100, 100, 6));
+  ok('hitsMark walks pen strokes point-by-point', M.hitsMark({ type: 'pen', points: [[0, 0], [50, 50]] }, 48, 48, 6));
   let doc = M.emptyDoc('https://example.com/erase');
   doc = M.addAnnotation(doc, { type: 'rect', rect: { x: 10, y: 10, w: 40, h: 30 } }).doc;
   doc = M.addAnnotation(doc, { type: 'pen', rect: { x: 100, y: 100 }, points: [[100, 100], [110, 110]] }).doc;
@@ -259,12 +289,77 @@ console.log('\n── 3f. Eraser ──');
   ok('huge radius can sweep several marks', M.eraseAt(doc, 30, 25, 200).removed.length === 3);
   ok('null doc is safe', M.eraseAt(null, 5, 5).removed.length === 0);
   ok('NaN coords are safe', M.eraseAt(doc, NaN, 5).removed.length === 0);
+
+  // ── rub-out (requested): the eraser takes only what the nib touches ──
+  let ro = M.emptyDoc('https://example.com/rubout');
+  ro = M.addAnnotation(ro, { type: 'pen', rect: { x: 0, y: 0 }, points: [[100, 100], [300, 100]] }).doc;
+  const startCut = M.eraseAt(ro, 100, 100); // rub the START of the line
+  ok('rub-out SHORTENS a stroke instead of deleting it',
+    startCut.removed.length === 1 && startCut.doc.annotations.length === 1 &&
+    startCut.doc.annotations[0].type === 'pen');
+  ok('rub-out keeps the untouched tail (starts at the nib edge)',
+    startCut.doc.annotations[0].points[0][0] >= 114 &&
+    startCut.doc.annotations[0].points[startCut.doc.annotations[0].points.length - 1][0] === 300);
+
+  let mid = M.emptyDoc('https://example.com/rubout');
+  mid = M.addAnnotation(mid, { type: 'pen', rect: { x: 0, y: 0 }, points: [[100, 100], [200, 100], [300, 100]] }).doc;
+  const nicked = M.eraseAt(mid, 200, 100); // nick the MIDDLE
+  ok('a middle nick SPLITS the stroke in two',
+    nicked.removed.length === 1 && nicked.doc.annotations.length === 2 &&
+    nicked.doc.annotations.every((a) => a.type === 'pen' && a.points.length >= 2));
+  ok('split pieces carry distinct ids', nicked.doc.annotations[0].id !== nicked.doc.annotations[1].id);
+  ok('the first piece keeps the original id (selection survives)',
+    nicked.doc.annotations[0].id === mid.annotations[0].id);
+  ok('no point stays inside the nib (clean gap; rim points allowed)',
+    nicked.doc.annotations.every((a) => a.points.every((p) => p[0] <= 186 || p[0] >= 214)));
+
+  let band = M.emptyDoc('https://example.com/rubout');
+  band = M.addAnnotation(band, { type: 'highlight', rect: { x: 100, y: 100, w: 300, h: 20 } }).doc;
+  const cut = M.eraseAt(band, 250, 110);
+  ok('highlight band is CUT with a gap, not deleted whole',
+    cut.removed.length === 1 && cut.doc.annotations.length === 2 &&
+    cut.doc.annotations.every((a) => a.type === 'highlight'));
+  ok('band pieces stay clear of the nib',
+    cut.doc.annotations.every((a) => a.rect.x + a.rect.w <= 236 || a.rect.x >= 264));
+  const stub = M.addAnnotation(M.emptyDoc('https://example.com/stub'),
+    { type: 'highlight', rect: { x: 100, y: 100, w: 40, h: 20 } }).doc;
+  const dusted = M.eraseAt(stub, 120, 110);
+  ok('nib across a short band deletes it (no dust stubs)',
+    dusted.doc.annotations.length === 0 && dusted.removed.length === 1);
   const restored = M.addAnnotation(M.emptyDoc('https://example.com/erase'), r.removed[0] || { type: 'text', rect: { x: 200, y: 50 }, text: 'keep me' });
   ok('erased marks re-add verbatim (undo path)', restored.added);
+  // PER-MARK eraser space: a mark anchored to a scrolled container is
+  // tested where the nib is IN ITS SPACE (offsetOf = overlay anchorDelta)
+  {
+    let edoc = M.emptyDoc('https://example.com/anchor-erase');
+    edoc = M.addAnnotation(edoc, { id: 'far', type: 'rect', rect: { x: 300, y: 300, w: 20, h: 20 } }).doc;
+    edoc = M.addAnnotation(edoc, { id: 'near', type: 'rect', rect: { x: 5, y: 5, w: 10, h: 10 } }).doc;
+    const off = (a) => (a.id === 'far' ? { dx: 300, dy: 300 } : { dx: 0, dy: 0 });
+    ok('eraseAt offsetOf tests each mark in its own container space',
+      M.eraseAt(edoc, 8, 8, 14, off).removed.some((a) => a.id === 'far') &&
+      M.eraseAt(edoc, 8, 8, 14, off).removed.some((a) => a.id === 'near'));
+    ok('without offsetOf the classic shared space applies (far survives)',
+      M.eraseAt(edoc, 8, 8, 14).removed.every((a) => a.id !== 'far'));
+    ok('offsetOf garbage falls back safely (no crash, no phantom erase)',
+      M.eraseAt(edoc, 8, 8, 14, () => 'junk').removed.every((a) => a.id !== 'far'));
+  }
   ok('eraser icon + tool wired in the overlay',
     read('public/markup-overlay.js').includes("eraser: '<path") &&
     read('public/markup-overlay.js').includes("'sticky', 'eraser', 'undo'") &&
-    read('public/markup-overlay.js').includes('M.eraseAt(doc, x, y, M.ERASER.RADIUS)'));
+    read('public/markup-overlay.js').includes('M.eraseAt(doc, x, y, M.ERASER.RADIUS, anchorDelta)'));
+  // erase CURSOR: a RING circle (inline PNG data-URI) — the old 'cell' cursor
+  // draws a PLUS, which users misread as "add".
+  {
+    const ov = read('public/markup-overlay.js');
+    const css = read('public/markup-overlay.css');
+    ok('erase-mode cursor is a circle RING image (no cell plus in CSS)',
+      /#mk-canvas\.mk-erasing\s*\{\s*cursor: url\("data:image\/png;base64,[A-Za-z0-9+/=]+"\) 16 16, default;/.test(css) &&
+      !/#mk-canvas\.mk-erasing\s*\{\s*cursor: cell/.test(css));
+    ok('tool switch toggles .mk-erasing + clears inline cursor (CSS owns the ring)',
+      ov.includes("canvas.classList.toggle('mk-erasing', t === 'eraser')") &&
+      ov.includes("canvas.style.cursor = t === 'eraser' ? '' : t === 'select'") &&
+      !ov.includes("canvas.style.cursor = t === 'eraser' ? 'cell'"));
+  }
   ok('undo/redo are snapshot-based (move/resize/recolor/erase all reversible)',
     read('public/markup-overlay.js').includes('function pushHistory()') &&
     read('public/markup-overlay.js').includes('redoStack.push(snap())'));
@@ -298,6 +393,150 @@ console.log('\n── 3g. Text sizes (S/M/L) ──');
     read('public/markup-overlay.js').includes('M.setAnnotationTextSize(doc, tctx.id, s)') &&
     read('public/markup-overlay.js').includes("M.TEXT_SIZE_PX[a.textSize || 'M']") &&
     read('public/markup-overlay.css').includes('.mk-size-btn'));
+}
+
+/* ================================================================== *
+ * 3h. Text-note boxes fit their wrapped lines ("move tool moves text") *
+ * ================================================================== */
+console.log('\n── 3h. Text-note box fitting ──');
+{
+  const ov = read('public/markup-overlay.js');
+  ok('rendered block measured with real font metrics + wrap count',
+    ov.includes('function textBlockMetrics') && ov.includes('actualBoundingBoxAscent') && ov.includes('wrapCount(a.text, w)'));
+  ok('box GROWS to fit content — grow-only, user height survives',
+    ov.includes('Math.max(a.rect.h, Math.round(2 * TEXT_PAD + textBlockMetrics(a).blockH))'));
+  ok('fit runs on render + save + load (legacy 24px boxes migrate + persist)',
+    (ov.match(/refitTextNotes\(\)/g) || []).length >= 4 && ov.includes('if (doc !== pre) saveDoc()'));
+  ok('fitted annotation is a NEW object (history snapshots stay valid)',
+    ov.includes('return { ...a, rect: { ...a.rect, h } };') && !/annotations\[[^\]]+\]\.rect\.h\s*=/.test(ov));
+  ok('notes wrap at the RECT width — resize reflows the text',
+    ov.includes('wrapText(a.text, tx, baseY, w, TEXT_LH') && ov.includes('const w = a.rect.w > 0 ? a.rect.w : 260'));
+  ok('text laid out INSIDE the fitted box (top/middle/bottom via valign)',
+    ov.includes('a.rect.y + TEXT_PAD + m.A') && ov.includes('a.rect.y + a.rect.h - TEXT_PAD - m.D - (m.n - 1) * m.gap'));
+  ok('center align anchors at the box middle (was: half outside left)',
+    ov.includes("a.align === 'center' ? a.rect.x + w / 2 : a.rect.x"));
+  ok('text notes resize from the SE handle like stickies (valign has room)',
+    ov.includes('const isResizable') && (ov.match(/isResizable\(/g) || []).length >= 3);
+}
+
+/* ================================================================== *
+ * 3i. Rail pill labels — hover/focus reveal (tooltips, not always-on)  *
+ * ================================================================== */
+console.log('\n── 3i. Rail hover tooltips ──');
+{
+  const css = read('public/markup-overlay.css');
+  const ov = read('public/markup-overlay.js');
+  ok('pill hidden at rest (opacity 0) + revealed on row hover/focus',
+    /\.mk-pill\s*\{[^}]*opacity:\s*0/.test(css) &&
+    css.includes('.mk-rail-row:hover .mk-pill') &&
+    css.includes('.mk-rail-row:focus-within .mk-pill'));
+  ok('reveal is a transition, disabled under prefers-reduced-motion',
+    /\.mk-pill\s*\{[^}]*transition: opacity/.test(css) && css.includes('prefers-reduced-motion'));
+  ok('pill is absolutely positioned (reveal never shifts the icons)',
+    /\.mk-pill\s*\{[^}]*position:\s*absolute/.test(css) && css.includes('position: relative; /* anchors the absolutely-positioned hover pill */'));
+  ok('pill is pointer-transparent (never eats clicks)',
+    /\.mk-pill\s*\{[^}]*pointer-events:\s*none/.test(css));
+  // slice the toolButton helper itself (up to the next helper) so the
+  // SHAPES box's own title= assignment is not conflated with the rail's
+  const tb = (ov.match(/const toolButton = [\s\S]*?const mkBox/) || [''])[0];
+  ok('rail icons carry aria-label (their pill IS the tooltip — no double native title)',
+    tb.includes("setAttribute('aria-label', NAMES[t])") && !tb.includes('.title ='));
+  ok('non-rail buttons (SHAPES box) still keep native titles',
+    ov.includes('b.title = NAMES[t]'));
+  ok('every rail row still carries its named pill (RAIL_SPEC → .mk-pill)',
+    ov.includes("pill.className = 'mk-pill'") && ov.includes('pill.textContent = label') &&
+    ['minimize tool', 'cross tool', 'shape tool', 'colors tool', 'move tool', 'Erase tool',
+     'back tool', 'undo tool', 'pen tool', 'text tool', 'highlight tool', 'sticky tool', 'bin tool']
+      .every((l) => ov.includes(l)));
+}
+
+/* ================================================================== *
+ * 3j. Draggable dock — the minimized O square parks anywhere           *
+ * ================================================================== */
+console.log('\n── 3j. Draggable dock ──');
+{
+  const ov = read('public/markup-overlay.js');
+  const css = read('public/markup-overlay.css');
+  ok('launcher wired as drag handle (pointerdown/move/up + capture)',
+    ov.includes("launcher.addEventListener('pointerdown'") &&
+    ov.includes("launcher.addEventListener('pointermove'") &&
+    ov.includes("launcher.addEventListener('pointerup', endLauncherDrag)") &&
+    ov.includes('setPointerCapture'));
+  ok('drag position clamped to the viewport (handle never leaves the screen)',
+    ov.includes('function clampDockOffset') && ov.includes('window.innerWidth - r.width - 4 - baseX') &&
+    ov.includes('window.innerHeight - r.height - 4 - baseY'));
+  ok('click under the 5px threshold still toggles minimize; real drags do not',
+    ov.includes('Math.abs(dx) + Math.abs(dy) < 5') &&
+    ov.includes('launcherJustDragged = launcherDrag.moved') &&
+    /if \(launcherJustDragged\) \{ launcherJustDragged = false; return; \}/.test(ov));
+  ok('parked spot persisted + restored (orbi_markup_dock)',
+    ov.includes('orbi_markup_dock') && ov.includes('function saveDockPos') && ov.includes('function loadDockPos') &&
+    ov.includes('loadDockPos()'));
+  ok('parked dock re-clamps on window resize',
+    /function resize\(\) \{[\s\S]*?clampDockOffset\(dockOffset\.x, dockOffset\.y\)/.test(ov));
+  ok('drag affordances: grab/grabbing cursors + touch-action none',
+    css.includes('cursor: grab') && css.includes('cursor: grabbing') && css.includes('touch-action: none'));
+}
+
+/* ================================================================== *
+ * 3k. Page-scroll anchoring — marks stick to the CONTENT              *
+ * ================================================================== */
+console.log('\n── 3k. Page-scroll anchoring ──');
+{
+  const ov = read('public/markup-overlay.js');
+  // "site scrolls, mark stays" bug: the overlay root is viewport-FIXED, so
+  // every canvas input converts client→PAGE coords and render() translates
+  // by the live scroll offset; a scroll event repaints (rAF-coalesced).
+  ok('input converts client→PAGE coords at every canvas entry point',
+    ov.includes('const toDoc = (e) => ({ x: e.clientX + pgX()') &&
+    (ov.split('toDoc(e)').length - 1) >= 2 &&    // onDown/onMove shared base
+    (ov.split('toMarkSpace(').length - 1) >= 6); // per-mark spaces everywhere else
+  ok('render() translates by −scroll offset (page coord → viewport pixel)',
+    /ctx\.clearRect\(0, 0, canvas\.width, canvas\.height\);\s*ctx\.save\(\);\s*\/\/ canvas pixel = PAGE coord − scroll offset[\s\S]*?ctx\.translate\(-pgX\(\), -pgY\(\)\);[\s\S]*?anns\.forEach[\s\S]*?ctx\.restore\(\);/.test(ov));
+  ok('scroll repaints (CAPTURE — inner-container scrolls don\'t bubble) + rAF teardown',
+    ov.includes("window.addEventListener('scroll', onScroll, { passive: true, capture: true })") &&
+    ov.includes('scrollRaf = requestAnimationFrame') &&
+    ov.includes("window.removeEventListener('scroll', onScroll, true)"));
+  ok('touch pan canceled ONLY while an annotation owns the gesture',
+    ov.includes("canvas.addEventListener('touchstart', stopTouchPan, { passive: false })") &&
+    ov.includes("canvas.addEventListener('touchmove', stopTouchPan, { passive: false })") &&
+    ov.includes('ownsGesture = () => !!(drawing || drag || sizing || erasing)'));
+  ok('mark drag captures the pointer + pointercancel finalizes safely',
+    ov.includes("canvas.addEventListener('pointercancel', onCancel)") &&
+    /if \(hit\) \{ drag = \{ id: hit\.a\.id[\s\S]{0,200}?setPointerCapture/.test(ov));
+  // INNER scroll containers (X/Gmail/Reddit/Notion): window.scrollY never
+  // moves there — each mark records the scrollable ancestors it was drawn
+  // on, render shifts by −delta, hit-tests/eraser add delta per mark.
+  ok('scrollable ancestors captured under the pointer (overlay hidden from elementFromPoint)',
+    ov.includes('function scrollParentsOf') && ov.includes('function elementUnderPage') &&
+    ov.includes('document.elementsFromPoint') && ov.includes('root.contains') &&
+    ov.includes('function captureAnchor') && ov.includes('path: els.map') === false &&
+    ov.includes('const path = els.map'));
+  ok('window scroller excluded (no double offset) + dead containers contribute 0',
+    ov.includes('n !== document.scrollingElement') && ov.includes('el.isConnected'));
+  ok('anchorDelta = container scroll since creation; every mark drawn in ITS space',
+    ov.includes('const anchorDelta = (a) =>') && ov.includes('function drawInMarkSpace') &&
+    /anns\.forEach\(\(a\) => drawInMarkSpace\(a, \(\) => drawMark\(a, false\)\)\)/.test(ov) &&
+    ov.includes('drawInMarkSpace(drawing, () => drawMark(drawing, true))') &&
+    ov.includes('drawInMarkSpace(sel, () => drawSelectionChrome(sel))'));
+  ok('hit-test + eraser + drag/resize run in the MARK\'s own space',
+    ov.includes('const s = toMarkSpace(cx, cy, a)') &&
+    ov.includes('M.hitsMark(a, s.x, s.y, PICK_SLOP)') &&
+    ov.includes('M.eraseAt(doc, x, y, M.ERASER.RADIUS, anchorDelta)') &&
+    ov.includes('toMarkSpace(e.clientX, e.clientY, drawing)'));
+  ok('editor + commits track containers (opts.anchor threaded, els re-attached)',
+    ov.includes('anchor: d.anchor') && ov.includes('anchor: a.anchor') &&
+    ov.includes('function reanchorLast') && ov.includes('reanchorLast(d);') &&
+    ov.includes('ax - pgX() - td.dx'));
+  ok('storage persists the numeric snapshot + PATH (element refs stripped, F5 re-attachable)',
+    ov.includes('Array.isArray(a.anchor.els)') &&
+    ov.includes('anchor: { sx: a.anchor.sx, sy: a.anchor.sy, path: a.anchor.path }') &&
+    ov.includes('function resolveAnchorPath') && ov.includes('function reattachAnchors') &&
+    ov.includes('reattachAnchors();'));
+  ok('reload re-resolves scrollers safely (id match trusted, census-guarded fallback, [] on miss)',
+    ov.includes('document.getElementById(p.id)') &&
+    ov.includes('pool.length === perTag[p.t]') &&
+    ov.includes('if (!el) return [];'));
 }
 
 /* ================================================================== *
@@ -384,14 +623,14 @@ console.log('\n── 5. Worker OPEN_MARKUP ──');
     !/Cannot access contents/i.test(responses[0].error || ''), JSON.stringify(responses));
 }
 
-/* 6. Manifest wiring — scripting + content scripts + WAR */
+/* 6. Manifest wiring — on-demand injection + narrow permissions */
 console.log('\n── 6. Manifest wiring ──');
 {
   const m = JSON.parse(read('public/manifest.json'));
   ok('scripting permission present (install-time fallback only)', m.permissions.includes('scripting'));
   ok('activeTab present (authorizes fallback injection on the ONE open tab — no broad host permissions)', m.permissions.includes('activeTab'));
-  ok('content script registered on http/https with core+overlay+css',
-    m.content_scripts?.[0]?.js?.includes('markup-core.js') && m.content_scripts?.[0]?.js?.includes('markup-overlay.js') && m.content_scripts?.[0]?.css?.includes('markup-overlay.css'));
+  ok('no all-sites content script; markup is injected only after a user action',
+    !m.content_scripts && /executeScript/.test(read('public/background.js')) && /ORBITABS_MARKUP_OPEN/.test(read('public/background.js')));
   ok('no web_accessible_resources needed (overlay is in-page, not an iframe)',
     !m.web_accessible_resources || m.web_accessible_resources.length === 0);
   ok('storage permission present (annotations are local-first)', m.permissions.includes('storage'));
@@ -406,6 +645,48 @@ console.log('\n── 7. Overlay rendering ──');
   ok('zero-length drag keeps a stable direction (no NaN angle)', src.includes('ang || 0') || src.includes('atan2(0,0)=0'));
   ok('palette click RECOLORS the selected mark (setAnnotationColor wired)', src.includes('setAnnotationColor(doc, selectedId'));
   ok('custom-color picker wired as an escape hatch', src.includes("type = 'color'") && src.includes('showPicker'));
+  ok('inline custom palette wired (SV area + hue/alpha sliders + eyedropper + hex field)',
+    src.includes('mk-palette') && src.includes('mk-pal-sv') && src.includes('mk-pal-hue') &&
+    src.includes('mk-pal-alpha') && src.includes('mk-eyedrop') && src.includes('mk-pal-hex'));
+  ok('palette commits through selectSwatch on RELEASE (one undo step per drag)',
+    src.includes('commitPal') && src.includes('selectSwatch(hex, custom)') &&
+    !src.includes('selectSwatch(palHex()'));
+  ok('palette seeded from the current color on open', src.includes('seedFromHex(color)'));
+  ok('alpha rides as 8-digit hex (core accepts #rrggbbaa)',
+    read('public/markup-core.js').includes('/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/'));
+  ok('stickyInk luminance ignores the alpha byte', src.includes('hex.slice(1, 7)'));
+  ok('palette CSS present (SV area + knobs + sliders)',
+    read('public/markup-overlay.css').includes('.mk-palette') &&
+    read('public/markup-overlay.css').includes('.mk-pal-sv') &&
+    read('public/markup-overlay.css').includes('.mk-pal-knob'));
+  ok('sticky + highlight REACHABLE (rail buttons — machinery is useless without a launcher)',
+    src.includes("['highlight', 'highlight', 'highlight tool']") &&
+    src.includes("['sticky', 'sticky', 'sticky tool']"));
+  ok('status element exists (flash() has a real target)', src.includes("status.className = 'mk-status'"));
+  ok('bin clears INSTANTLY (no confirm dialog — requested) with undo behind it',
+    !src.includes('window.confirm') && src.includes("flash('Cleared ✓')") &&
+    read('public/markup-core.js').includes('clipPenRuns'));
+  ok('render syncs the shape picker (erase/deselect never leaves it stale)',
+    src.includes('syncShapePicker(); // erasing/deselecting'));
+  ok('select hit-test goes through the EXPORTED hitsMark (per-mark space)',
+    src.includes('M.hitsMark(a, s.x, s.y, PICK_SLOP)'));
+  ok('"On this page" section wired (computed-color scan + swatch grid)',
+    src.includes('mk-pal-page') && src.includes('mk-pal-page-grid') &&
+    src.includes('On this page') && src.includes('scanPageColors'));
+  ok('page-color scan skips the overlay itself (no self-sampling)', src.includes('root.contains(el)'));
+  ok('page swatches commit through the SAME selectSwatch path',
+    src.includes('if (seedFromHex(hex)) { paintPalette(); commitPal(); }'));
+  ok('page-color section CSS present (header + grid + collapse)',
+    read('public/markup-overlay.css').includes('.mk-pal-page-head') &&
+    read('public/markup-overlay.css').includes('.mk-pal-page-grid') &&
+    read('public/markup-overlay.css').includes('.mk-pal-page.mk-collapsed'));
+  ok('component chips OUTRANK the .mk-panel button reset (specificity — bg/border/spacing must survive)',
+    read('public/markup-overlay.css').includes('.mk-panel .mk-pal-page-head') &&
+    read('public/markup-overlay.css').includes('.mk-panel .mk-eyedrop') &&
+    read('public/markup-overlay.css').includes('.mk-panel .mk-style-btn') &&
+    read('public/markup-overlay.css').includes('.mk-panel .mk-size-btn'));
+  ok('custom ring shows the picked color (no !important blocking inline bg)',
+    !/\.mk-swatch\.mk-custom\s*\{[^}]*!important/s.test(read('public/markup-overlay.css')));
   ok('custom swatch styled in the overlay CSS', read('public/markup-overlay.css').includes('.mk-swatch.mk-custom'));
   ok('text note auto-selected after commit (movable + recolorable)', src.includes('setTool(\'select\')'));
   ok('tools carry data-tool hooks (programmatic switch + tests)', src.includes('b.dataset.tool = t'));

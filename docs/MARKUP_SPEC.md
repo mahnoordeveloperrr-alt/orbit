@@ -14,7 +14,9 @@
 > `chrome.scripting` only as an install-time fallback), DPR/zoom handled by
 > the browser at overlay render time, canonical URL normalizer (shared rules
 > in `markup-core.js`), per-page caps + eviction (oldest-first).
-> Element/DOM anchoring stays a V1.2 idea.
+> **Scroller-chain anchoring (v1.5):** every mark records the scrollable
+> ancestors it was drawn inside (numeric snapshot + a re-resolvable path),
+> so it rides both window AND inner-container scrolling — see §3.
 > **Core promise:** *Mark important parts of any webpage and keep those notes
 > with your saved research session.*
 
@@ -54,10 +56,8 @@ structured record:
   "id": "an_01J9...",            // unique, generated at draw time
   "url": "https://example.com/article",
   "sessionId": "sess_...",       // session this page's markup belongs to
-  "type": "highlight",           // pen|highlight|rect|circle|arrow|text
-  "rect": { "x": 500, "y": 700, "w": 220, "h": 90 },  // viewport-relative
-  "scrollPct": 0.42,             // page scroll position when drawn (0-1)
-  "pageHeight": 8400,            // to rescale y when page height changes
+  "type": "highlight",           // pen|highlight|rect|circle|arrow|text|sticky
+  "rect": { "x": 500, "y": 700, "w": 220, "h": 90 },  // PAGE (document) coords
   "points": [[x, y], ...],       // pen strokes only
   "color": "#facc15",
   "text": "Need to verify this claim.",
@@ -68,23 +68,61 @@ structured record:
 This is what keeps annotations **editable, undoable, searchable, exportable**
 — and the site untouched.
 
-## 3. Positioning: coordinate-based first (the honest limitation)
+## 3. Positioning: page coordinates + scroller-chain anchoring
 
 Websites are responsive; `x:500, y:700` today may be elsewhere tomorrow.
-V1.1 uses **viewport-relative coordinates + scroll percentage**, so
-annotations survive:
+V1.1 stores every mark in **page (document) coordinates** and renders with a
+scroll-matched transform (input converted to page coords, canvas translated
+by −scrollX/−scrollY each frame), so annotations survive:
 
-- ✅ same layout, different window size (proportional rescale)
-- ✅ page slightly longer/shorter (scroll-anchored)
-- ⚠️ layout reflow moves text under the mark (mark stays put, page moves)
+- ✅ scrolling while annotating — marks track their content 1:1; the page
+  never scrolls from a mark gesture, and a mark never drifts
+- ✅ same layout, different window size (marks keep their page position)
+- ⚠️ layout reflow moves text under the mark (mark stays on its page spot)
 
-**Element/DOM anchoring** (attach to a text node / element selector) is a
-V1.2 idea — it fixes reflow but adds fragility on dynamic pages.
+### Inner-scroll containers (v1.5 — X/Gmail/Reddit/Notion-style feeds)
+
+Sites like Twitter/X, Gmail, Reddit and Notion scroll an **inner div**, not
+the window — `window.scrollY` stays 0 there, and a plain page-space mark
+freezes while its paragraph slides away. Every mark therefore also records
+the **scroller chain** it was drawn inside:
+
+- **Capture:** `captureAnchor()` walks up from the element under the pointer
+  (overlay elements excluded) collecting scrollable ancestors — live element
+  refs `els` + their `scrollTop/scrollLeft` snapshot `sx/sy` + a **path**
+  descriptor per scroller (`tag`, nth-of-type index, `id` hint).
+- **Render:** `anchorDelta()` = how far those containers scrolled since the
+  snapshot; `drawInMarkSpace()` shifts the mark by −delta, so it rides its
+  content on **both** axes and for window scroll too (window translate is
+  applied globally, container deltas per mark).
+- **Input:** hit-testing, drag, resize, eraser and the text-note editor all
+  convert through `toMarkSpace()` — every gesture runs in the mark's own
+  frame, so a note inside a scrolled div stays pickable and movable exactly
+  where it renders. Dragging a mark never scrolls the page (pointer
+  capture + `touch-action`/pan cancel only while a gesture owns the pointer).
+- **Reload (F5):** element refs can't be stored, so `saveDoc()` persists the
+  numeric snapshot + `path`; on load `reattachAnchors()` re-resolves the
+  chain — an `id` match is trusted, the positional fallback only fires when
+  the page's same-tag scroller census still matches, and an unresolvable
+  path falls back to `[]` (classic window-space — **never** a wrong
+  container). Detached containers (SPA nav) contribute 0.
+- **One CSS invariant the capture depends on:** the overlay root is
+  `pointer-events: none` (canvas/dock children/editor opt back in with
+  `auto`). Otherwise `elementFromPoint` returns the overlay itself, the
+  anchor walk starts at the root, and every chain comes back empty — marks
+  then freeze while the site scrolls. `elementUnderPage()` additionally
+  walks `elementsFromPoint` and skips anything inside the overlay, so a
+  foreign overlay can't hijack the query either.
+
+**Text-node/DOM anchoring** (attach to a specific text node so marks follow
+reflow) remains a V1.2 idea — scroller-chain anchoring fixes scrolling, not
+reflow, but adds no selector fragility.
 
 ### Known-hard pages (documented, not hidden)
 
-Google Docs, YouTube, infinite-scroll feeds, canvas apps: scroll position
-and content are programmatic, so coordinate persistence is unreliable there.
+Google Docs, YouTube, infinite-scroll feeds, canvas apps: content there is
+programmatic and virtualized — elements are created/destroyed as you scroll —
+so a fixed page coordinate can point at different content later.
 V1.1 shows a small notice on such pages: *"Markup on this page may not
 restore to the exact spot."* The feature is honestly named **Page markup** —
 a universal annotation engine it is not (yet).

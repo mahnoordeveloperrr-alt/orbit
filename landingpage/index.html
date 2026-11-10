@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orbitabs - Kill Chrome. Get your tabs back.</title>
+    
+    <!-- Tailwind & GSAP -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <!-- Poiret One Font for Logo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800;900&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #050505;
+        color: #fff;
+        overflow-x: hidden;
+      }
+
+      ::selection {
+        background-color: #fff;
+        color: #000;
+      }
+
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      html,
+      body {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      nav {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .glass:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .kbd {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-bottom: 3px solid #111;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-family: "Inter", sans-serif;
+        font-size: 0.65rem;
+        color: #ccc;
+        display: inline-block;
+        font-weight: 500;
+      }
+      @media (min-width: 640px) {
+        .kbd {
+          padding: 4px 12px;
+          font-size: 0.7rem;
+        }
+      }
+
+      .faq-content {
+        max-height: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.5s ease-in-out,
+          opacity 0.3s ease-in-out;
+        opacity: 0;
+      }
+      .faq-item.active .faq-content {
+        max-height: 400px;
+        opacity: 1;
+      }
+      .faq-icon {
+        transition: transform 0.3s ease;
+      }
+      .faq-item.active .faq-icon {
+        transform: rotate(45deg);
+      }
+
+      .feature-item {
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @media (min-width: 1024px) {
+        .feature-item:hover {
+          padding-left: 1.5rem;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.03) 0%,
+            transparent 100%
+          );
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+        .feature-item:hover .feature-title {
+          color: #fff;
+        }
+        .feature-item:hover .feature-number {
+          color: #fff;
+          opacity: 1;
+        }
+      }
+
+      .wide-container {
+        width: 100%;
+        max-width: min(1800px, 98vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 24px);
+        padding-right: clamp(8px, 1.5vw, 24px);
+      }
+      .wide-container-md {
+        width: 100%;
+        max-width: min(1600px, 97vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 20px);
+        padding-right: clamp(8px, 1.5vw, 20px);
+      }
+      .wide-container-sm {
+        width: 100%;
+        max-width: min(1400px, 96vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 16px);
+        padding-right: clamp(8px, 1.5vw, 16px);
+      }
+
+      .mobile-menu {
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s ease;
+      }
+      .mobile-menu.hidden-menu {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .hamburger span {
+        transition:
+          transform 0.3s ease,
+          opacity 0.3s ease;
+      }
+      .hamburger.open span:nth-child(1) {
+        transform: translateY(8px) rotate(45deg);
+      }
+      .hamburger.open span:nth-child(2) {
+        opacity: 0;
+      }
+      .hamburger.open span:nth-child(3) {
+        transform: translateY(-8px) rotate(-45deg);
+      }
+    </style>
+  </head>
+  <body class="relative min-h-screen flex flex-col antialiased">
+    <div class="fixed inset-0 -z-20 overflow-hidden">
+      <img
+        src="background.jpg"
+        alt="Background"
+        class="w-full h-full object-cover opacity-50 grayscale"
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/70 to-[#050505]"
+      ></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav
+      class="fixed w-full top-0 z-50 flex justify-between items-center px-3 md:px-6 py-2 md:py-4 text-sm font-light text-gray-300 bg-black/30 backdrop-blur-md border-b border-white/5 transition-all duration-300"
+    >
+      <!-- NEW LOGO DESIGN -->
+      <a href="index.html" aria-label="Orbitabs home" class="flex items-center group"><img src="orbitabs-wordmark.png" alt="Orbitabs" class="h-8 sm:h-10 md:h-12 w-auto object-contain" /></a>
+      
+      <div class="hidden md:flex gap-8 text-[12px] uppercase tracking-widest">
+        <a href="#features" class="hover:text-white transition-colors duration-300">Features</a>
+        <a href="#how-it-works" class="hover:text-white transition-colors duration-300">How it works</a>
+        <a href="#privacy" class="hover:text-white transition-colors duration-300">Privacy</a>
+        <a href="#faq" class="hover:text-white transition-colors duration-300">FAQ</a>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a
+          href="#"
+          class="hidden sm:inline-block bg-white text-black px-3 sm:px-5 py-2 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-gray-200 hover:scale-105 transition-all duration-300"
+          >Add to Chrome — free</a
+        >
+        <button
+          id="menu-btn"
+          class="hamburger md:hidden w-11 h-11 flex flex-col items-center justify-center gap-1.5 p-1"
+          aria-label="Menu"
+        >
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div
+      id="mobile-menu"
+      class="mobile-menu hidden-menu md:hidden fixed inset-0 top-[61px] bg-black/98 backdrop-blur-lg z-40 flex flex-col items-center justify-center gap-6 uppercase tracking-widest text-sm"
+    >
+      <a href="#features" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">Features</a>
+      <a href="#how-it-works" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">How it works</a>
+      <a href="#privacy" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">Privacy</a>
+      <a href="#faq" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">FAQ</a>
+      <a href="#" class="mt-4 bg-white text-black px-8 py-3 rounded-full text-xs font-semibold">Add to Chrome — free</a>
+    </div>
+
+    <!-- ==================== HERO SECTION ==================== -->
+    <section
+      class="relative min-h-screen flex items-center justify-center pt-24 md:pt-28 pb-16 px-4 overflow-hidden"
+    >
+      <!-- Background glow -->
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] md:w-[700px] md:h-[700px] bg-white/8 rounded-full blur-[120px] pointer-events-none hero-glow"
+      ></div>
+
+      <!-- ===== 3 DECORATIVE ORBIT RINGS ===== -->
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[950px] h-[950px] sm:w-[1200px] sm:h-[1200px] md:w-[1400px] md:h-[1400px] lg:w-[1500px] lg:h-[1500px] rounded-full border border-white/[0.04] pointer-events-none z-0 orbit-ring-1"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[750px] sm:w-[950px] sm:h-[950px] md:w-[1100px] md:h-[1100px] lg:w-[1250px] lg:h-[1250px] rounded-full border border-white/[0.06] pointer-events-none z-0 orbit-ring-2"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] sm:w-[650px] sm:h-[650px] md:w-[750px] md:h-[750px] lg:w-[900px] lg:h-[900px] rounded-full border border-dashed border-white/[0.08] pointer-events-none z-0 orbit-ring-3"></div>
+
+      <!-- Main content -->
+      <div class="relative z-10 w-full max-w-3xl mx-auto text-center flex flex-col items-center">
+        <span class="text-[10px] sm:text-xs tracking-widest text-gray-400 uppercase mb-6 sm:mb-8 border border-white/10 px-3 py-1 rounded-full glass hero-badge">Chrome extension · Free · Local-first</span>
+
+        <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.05] mb-5 sm:mb-7 text-glow hero-title">
+          <span class="block text-white">Kill Chrome.</span>
+          <span class="block text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-300 to-gray-500">Get your tabs back.</span>
+        </h1>
+
+        <p class="text-sm sm:text-base md:text-lg text-gray-400 leading-relaxed mb-8 sm:mb-10 max-w-2xl px-2 hero-desc">
+          Save entire sessions — windows, tab groups, pinned tabs and order —
+          and restore them exactly, even after a crash.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full justify-center max-w-xs sm:max-w-none mb-10 sm:mb-12 hero-btns">
+          <a href="#" class="bg-white text-black px-6 sm:px-8 py-3 sm:py-3.5 rounded-full text-sm font-semibold hover:bg-gray-200 hover:scale-105 transition-all duration-300 shadow-[0_0_25px_rgba(255,255,255,0.25)]">Add to Chrome — free</a>
+          <a href="#how-it-works" class="glass px-6 sm:px-8 py-3 sm:py-3.5 rounded-full text-sm font-semibold hover:bg-white/10 transition-all duration-300">See how it works</a>
+        </div>
+
+        <!-- 2x2 Grid Bullets -->
+        <ul class="text-left text-[11px] sm:text-xs md:text-sm text-gray-400 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 max-w-3xl mx-auto w-full px-1 hero-bullets">
+          <li class="flex items-start gap-2">
+            <span class="text-white mt-0.5 shrink-0">✓</span>
+            <span><span class="text-white font-medium">Exact restore</span> — groups (title/color/collapsed), pins, active tab, window layout</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-white mt-0.5 shrink-0">✓</span>
+            <span><span class="text-white font-medium">Crash recovery</span> — a red badge offers your pre-crash session on relaunch</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-white mt-0.5 shrink-0">✓</span>
+            <span><span class="text-white font-medium">Auto-save Live Backup</span> + 30-day Trash with Undo, Export/Import</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-white mt-0.5 shrink-0">✓</span>
+            <span><span class="text-white font-medium">Local-first &amp; private</span> — no account, no analytics, works offline</span>
+          </li>
+        </ul>
+
+        <p class="mt-8 sm:mt-10 text-[10px] sm:text-[11px] text-gray-500 hero-shortcuts text-center">
+          <span class="kbd">Alt+Shift+S</span> to save ·
+          <span class="kbd">Alt+Shift+R</span> to restore — remappable.
+        </p>
+      </div>
+    </section>
+
+    <!-- Dual Highlight Banners -->
+    <section class="py-8 sm:py-12 wide-container-md w-full reveal">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div class="lg:col-span-2 bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-10 flex flex-col md:flex-row items-center gap-5 sm:gap-6 md:gap-8 relative overflow-hidden group hover:border-white/20 transition-colors">
+          <div class="relative w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 shrink-0">
+            <div class="absolute top-0 left-0 w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-white/10 flex items-center justify-center">
+              <svg class="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+              </svg>
+            </div>
+            <div class="absolute bottom-0 right-0 w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full border-4 border-[#111111] overflow-hidden bg-black">
+              <!-- Yahan bhi symbol use kiya hai -->
+              <img src="symbol.png" alt="Orbitabs" class="w-full h-full object-cover p-3 md:p-4" />
+            </div>
+          </div>
+          <div class="text-center md:text-left z-10 px-2 sm:px-4 md:px-8 lg:px-10 py-2">
+            <p class="text-xs sm:text-sm text-gray-400 mb-2 sm:mb-3">Save your Chrome. Stay in control.</p>
+            <h2 class="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight text-white">Save &amp; Restore<br />with one click</h2>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+          <div class="text-black/70 font-medium z-10 text-sm sm:text-base">
+            <p>Users and Supportive<br />Community</p>
+          </div>
+          <div class="flex items-end justify-between mt-6 sm:mt-8 z-10">
+            <h2 class="text-5xl sm:text-6xl md:text-7xl font-bold text-black tracking-tighter">4.8K</h2>
+            <div class="flex -space-x-2 sm:-space-x-3">
+              <img class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white grayscale" src="https://i.pravatar.cc/100?img=1" alt="User" />
+              <img class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white grayscale" src="https://i.pravatar.cc/100?img=2" alt="User" />
+              <img class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white grayscale" src="https://i.pravatar.cc/100?img=3" alt="User" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mockup -->
+    <section class="py-16 sm:py-24 wide-container-sm w-full reveal">
+      <div class="glass rounded-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[520px] shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+        <div class="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 p-4 sm:p-6 flex flex-col gap-5 sm:gap-8 bg-black/40">
+          <div class="flex items-center gap-2">
+            <img src="orbitabs-wordmark.png" alt="Orbitabs" class="h-5 w-24 object-contain" />
+          </div>
+          <div class="flex md:flex-col gap-2 text-xs text-gray-400 overflow-x-auto hide-scrollbar">
+            <span class="text-white bg-white/10 px-3 py-2 rounded-lg border border-white/5 whitespace-nowrap">Sessions</span>
+            <span class="hover:text-white hover:bg-white/5 px-3 py-2 rounded-lg cursor-pointer transition-all whitespace-nowrap">Organizer</span>
+            <span class="hover:text-white hover:bg-white/5 px-3 py-2 rounded-lg cursor-pointer transition-all whitespace-nowrap">Settings</span>
+          </div>
+          <div class="hidden md:block mt-auto text-[10px] text-gray-500 border-t border-white/10 pt-4">No account required.</div>
+        </div>
+        <div class="flex-1 p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 bg-gradient-to-br from-transparent to-black/20">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 class="text-base sm:text-lg font-medium">Welcome to Orbitabs</h2>
+            <div class="flex gap-2">
+              <span class="text-[10px] glass px-3 py-1.5 rounded-full text-gray-300 cursor-pointer hover:bg-white/10">All windows</span>
+              <button class="text-[10px] bg-white text-black px-3 sm:px-4 py-1.5 rounded-full font-semibold hover:scale-105 transition-transform">+ Save</button>
+            </div>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-gray-500 -mt-2">Save your Chrome tabs, groups and windows — and restore them whenever you need.</p>
+          <div class="flex flex-col md:flex-row gap-3 sm:gap-4 text-xs">
+            <div class="flex-1 glass rounded-lg p-2.5 sm:p-3 flex items-center justify-between cursor-pointer hover:bg-white/10 transition-colors">
+              <span>⚡ Save current tabs</span><span class="text-gray-500">Cmd+S</span>
+            </div>
+            <div class="flex-1 glass rounded-lg p-2.5 sm:p-3 text-gray-500 flex items-center">
+              <svg class="w-3 h-3 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>Search...
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px] text-gray-500">
+            <span>Orbitabs stores your sessions locally by default.</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>Auto-save ON</span>
+          </div>
+          <div class="flex flex-col gap-3 mt-1">
+            <div class="text-[10px] text-gray-500 uppercase tracking-widest flex justify-between border-b border-white/5 pb-2"><span>Saved Sessions</span><span>3</span></div>
+            <div class="glass rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center group cursor-pointer">
+              <div class="flex flex-col gap-1">
+                <span class="text-sm font-medium group-hover:text-white transition-colors">Research sprint</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-500">2 windows · 15 tabs · 5 days ago</span>
+              </div>
+              <button class="text-[10px] border border-white/20 px-4 py-1.5 rounded-full group-hover:bg-white group-hover:text-black transition-all self-start sm:self-auto">Restore</button>
+            </div>
+            <div class="glass rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center border-white/20 bg-white/5 group cursor-pointer relative overflow-hidden">
+              <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="flex flex-col gap-1 relative z-10">
+                <span class="text-sm font-medium flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>Pre-crash snapshot 1</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-500">Chrome crashed 4 min ago — restored ✓</span>
+              </div>
+              <button class="text-[10px] border border-white/30 text-white px-4 py-1.5 rounded-full hover:bg-white hover:text-black transition-all relative z-10 self-start sm:self-auto">Restore</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The Problem -->
+    <section class="py-16 sm:py-24 wide-container-md w-full border-t border-white/5 reveal">
+      <div class="mb-4"><span class="text-[10px] text-gray-500 uppercase tracking-widest">The problem</span></div>
+      <div class="mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-3xl md:text-5xl font-light mb-4 sm:mb-6 text-glow">Your tabs are your working memory.<br /><span class="text-gray-500">Chrome keeps erasing it.</span></h2>
+        <p class="text-gray-400 max-w-2xl text-xs sm:text-sm md:text-base">Built for people who run 20–80 tabs on purpose — and have lost them once already.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div class="glass p-6 sm:p-8 rounded-2xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-white/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform"></div>
+          <h3 class="text-base sm:text-lg text-white font-medium relative z-10">One crash, zero tabs</h3>
+          <p class="text-xs sm:text-sm text-gray-400 leading-relaxed relative z-10">Force quit, update, profile glitch — and the 40 tabs you were thinking in are gone.</p>
+        </div>
+        <div class="glass p-6 sm:p-8 rounded-2xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-white/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform"></div>
+          <h3 class="text-base sm:text-lg text-white font-medium relative z-10">"Restore" loses the structure</h3>
+          <p class="text-xs sm:text-sm text-gray-400 leading-relaxed relative z-10">Most tools hand back a flat list of URLs: your groups, pins and window order are gone.</p>
+        </div>
+        <div class="glass p-6 sm:p-8 rounded-2xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-white/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform"></div>
+          <h3 class="text-base sm:text-lg text-white font-medium relative z-10">Or it wants your account first</h3>
+          <p class="text-xs sm:text-sm text-gray-400 leading-relaxed relative z-10">Cloud-only tools put your browsing history on someone else's server before you can save a tab.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="relative w-full py-16 sm:py-24 lg:py-32 wide-container w-full border-t border-white/5 reveal">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8">
+        <div class="lg:col-span-5 relative">
+          <div class="lg:sticky lg:top-32 lg:pl-10 xl:pl-16 pr-2">
+            <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-3 sm:mb-4">Features</span>
+            <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-7xl lg:text-[5.5rem] font-light tracking-tighter leading-[0.9] sm:leading-[0.85] mb-5 sm:mb-8 text-white">Save it<br /><span class="text-gray-500 font-light">exactly.</span><br />Get it back<br /><span class="font-bold text-white">exactly.</span></h2>
+            <p class="text-gray-400 text-xs sm:text-sm max-w-sm leading-relaxed">Everything below works offline, with no account, for free.</p>
+          </div>
+        </div>
+        <div class="lg:col-span-7 flex flex-col border-t border-white/10">
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">01</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Exact restore</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed">Windows, tab order, groups (name, color, collapsed state), pinned tabs, focused window — rebuilt, not just listed.</p>
+              </div>
+            </div>
+          </div>
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">02</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Crash recovery</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed">Live Backup snapshots continuously; when Chrome dies, a red badge offers your pre-crash state — with recovery points to go further back.</p>
+              </div>
+            </div>
+          </div>
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">03</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Keyboard-first</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed"><span class="kbd">Alt+Shift+S</span> to save, <span class="kbd">Alt+Shift+R</span> to restore last. Remappable at <code class="bg-white/10 px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] text-gray-300">chrome://extensions/shortcuts</code>.</p>
+              </div>
+            </div>
+          </div>
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">04</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Organizer</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed">Drag, multi-select, group/ungroup, rename with Chrome's colors, search by name, URL or title. Soft-delete with 30-day undo.</p>
+              </div>
+            </div>
+          </div>
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">05</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Markup on any page</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed">Pen, highlight, shapes, text and sticky notes drawn on the page — stored as data, never modifying the site itself.</p>
+              </div>
+            </div>
+          </div>
+          <div class="feature-item group border-b border-white/10 py-6 sm:py-8 md:py-10 relative cursor-default">
+            <div class="flex items-start gap-4 sm:gap-6 md:gap-10">
+              <span class="feature-number text-xs sm:text-sm font-mono text-gray-600 mt-1 opacity-50">06</span>
+              <div>
+                <h3 class="feature-title text-xl sm:text-2xl md:text-3xl font-medium text-gray-400 mb-2 sm:mb-3 transition-colors duration-300">Local-first</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-lg leading-relaxed">Everything lives in your browser's storage. Cloud sync exists but is opt-in, off by default, and capped free at 100 sessions.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="relative w-full py-16 sm:py-24 lg:py-32 px-4 sm:px-6 md:px-10 lg:px-16 border-t border-white/5 reveal flex items-center overflow-hidden">
+      <div class="max-w-[1700px] mx-auto w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-2 w-full items-center">
+          <div class="flex flex-col justify-between min-h-0 lg:min-h-[600px] relative z-10 w-full max-w-lg mx-auto lg:mx-0 gap-8">
+            <div class="w-full text-left">
+              <p class="text-[10px] text-gray-500 font-mono tracking-widest uppercase leading-loose">THREE STATES,<br />TWO SHORTCUTS.</p>
+            </div>
+            <div class="flex flex-col gap-8 sm:gap-12 w-full my-4 sm:my-12">
+              <div class="w-full max-w-[280px] self-start">
+                <div class="flex gap-1.5 mb-2.5"><span class="kbd">Alt</span><span class="kbd">Shift</span><span class="kbd">S</span></div>
+                <h3 class="text-white font-semibold text-sm mb-1.5">Save the moment</h3>
+                <p class="text-gray-400 text-xs sm:text-[13px] leading-relaxed pr-2 sm:pr-4">One keystroke snapshots every window, group and pinned tab as a named session — or use the popup to save one window.</p>
+              </div>
+              <div class="w-full max-w-[280px] self-end lg:mr-10">
+                <div class="flex gap-1.5 mb-2.5"><span class="kbd">auto</span></div>
+                <h3 class="text-white font-semibold text-sm mb-1.5">Live Backup runs itself</h3>
+                <p class="text-gray-400 text-xs sm:text-[13px] leading-relaxed pr-2 sm:pr-4">A continuously updated snapshot in the background, with a retention window you control. Nothing is uploaded.</p>
+              </div>
+              <div class="w-full max-w-[280px] self-start">
+                <div class="flex gap-1.5 mb-2.5"><span class="kbd">Alt</span><span class="kbd">Shift</span><span class="kbd">R</span></div>
+                <h3 class="text-white font-semibold text-sm mb-1.5">Restore it exactly</h3>
+                <p class="text-gray-400 text-xs sm:text-[13px] leading-relaxed pr-2 sm:pr-4">After a crash, a restart, or just Tuesday — get the browser back the way it was, structure intact.</p>
+              </div>
+            </div>
+            <div class="w-full text-left">
+              <a href="#" class="inline-block bg-white text-black px-6 sm:px-7 py-2.5 rounded-full text-xs font-semibold hover:bg-gray-200 hover:scale-105 transition-all duration-300">Add to Chrome — free</a>
+            </div>
+          </div>
+          <div class="flex flex-col justify-center w-full">
+            <div class="text-3xl sm:text-4xl md:text-5xl lg:text-[6.5rem] xl:text-[7.5rem] leading-[0.95] sm:leading-[0.9] tracking-tighter flex flex-col">
+              <span class="font-light text-white">Save the</span>
+              <span class="font-bold text-white mb-3 sm:mb-4 md:mb-6">moment.<span class="font-light text-gray-500">Live</span></span>
+              <span class="font-bold text-white mb-3 sm:mb-4 md:mb-6">Backup.<span class="font-light text-white">Restore</span></span>
+              <span class="font-bold text-white">exactly.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inside the Product -->
+    <section class="py-16 sm:py-24 wide-container w-full border-t border-white/5 reveal">
+      <div class="mb-8 sm:mb-12">
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-3">Inside the product</span>
+        <h2 class="text-2xl sm:text-3xl md:text-5xl font-light text-white">What it actually looks like.</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div class="glass rounded-2xl overflow-hidden group hover:border-white/20 transition-colors">
+          <div class="aspect-video bg-black/60 flex items-center justify-center text-gray-600 text-xs">Dashboard preview</div>
+          <div class="p-4 sm:p-5">
+            <h3 class="text-xs sm:text-sm font-medium text-white mb-1">Dashboard — sessions, folders, tags, restore</h3>
+            <p class="text-[10px] sm:text-[11px] text-gray-500">Orbitabs popup dashboard showing saved session cards with folders and tags.</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl overflow-hidden group hover:border-white/20 transition-colors">
+          <div class="aspect-video bg-black/60 flex items-center justify-center text-gray-600 text-xs">Crash recovery banner</div>
+          <div class="p-4 sm:p-5">
+            <h3 class="text-xs sm:text-sm font-medium text-white mb-1">Crash recovery — red badge → restore</h3>
+            <p class="text-[10px] sm:text-[11px] text-gray-500">Orbitabs crash recovery banner offering the pre-crash session.</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl overflow-hidden group hover:border-white/20 transition-colors">
+          <div class="aspect-video bg-black/60 flex items-center justify-center text-gray-600 text-xs">Markup overlay</div>
+          <div class="p-4 sm:p-5">
+            <h3 class="text-xs sm:text-sm font-medium text-white mb-1">Markup — annotate, don't modify</h3>
+            <p class="text-[10px] sm:text-[11px] text-gray-500">Orbitabs markup overlay drawing on a web page.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Horizontal Cards -->
+    <section class="py-16 sm:py-24 wide-container w-full border-t border-white/5 reveal overflow-hidden">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 sm:mb-12 gap-4 sm:gap-8">
+        <div>
+          <h2 class="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight leading-none mb-2 text-white">More than <span class="text-gray-500 font-light">a tool</span><br /><span class="font-bold">Your workflow escape</span></h2>
+        </div>
+        <div class="max-w-xs text-xs sm:text-sm text-gray-400 md:pb-2">
+          <p>At Orbitabs, every session is designed with structure, stability, and peace of mind for users who need to organize their digital space.</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mb-4 sm:mb-6">
+        <button id="scroll-left" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors duration-300">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <button id="scroll-right" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors duration-300">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </div>
+      <div id="cards-slider" class="flex gap-4 sm:gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-6 sm:pb-8">
+        <div class="min-w-[260px] sm:min-w-[300px] md:min-w-[380px] bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between snap-start relative overflow-hidden group hover:bg-white/10 transition-colors duration-300">
+          <div class="relative z-10">
+            <h3 class="text-xl sm:text-2xl font-semibold mb-3 text-white">Exact Restore</h3>
+            <p class="text-xs sm:text-sm text-gray-400 leading-relaxed">Elegant restoration with perfect structure, preserving your groups, pins, and window layout perfectly.</p>
+          </div>
+          <div class="text-[5rem] sm:text-[7rem] md:text-[9rem] font-bold text-white/5 leading-none text-right mt-6 sm:mt-8 -mb-4 sm:-mb-6 -mr-3 sm:-mr-4 group-hover:text-white/10 transition-colors duration-300">01</div>
+        </div>
+        <div class="min-w-[260px] sm:min-w-[300px] md:min-w-[380px] bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between snap-start relative overflow-hidden group hover:bg-white/10 transition-colors duration-300">
+          <div class="relative z-10">
+            <h3 class="text-xl sm:text-2xl font-semibold mb-3 text-white">Crash Recovery</h3>
+            <p class="text-xs sm:text-sm text-gray-400 leading-relaxed">Relax knowing your tabs are safe with continuous background snapshots and instant pre-crash recovery.</p>
+          </div>
+          <div class="text-[5rem] sm:text-[7rem] md:text-[9rem] font-bold text-white/5 leading-none text-right mt-6 sm:mt-8 -mb-4 sm:-mb-6 -mr-3 sm:-mr-4 group-hover:text-white/10 transition-colors duration-300">02</div>
+        </div>
+        <div class="min-w-[260px] sm:min-w-[300px] md:min-w-[380px] bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between snap-start relative overflow-hidden group hover:bg-white/10 transition-colors duration-300">
+          <div class="relative z-10">
+            <h3 class="text-xl sm:text-2xl font-semibold mb-3 text-white">Smart Organizer</h3>
+            <p class="text-xs sm:text-sm text-gray-400 leading-relaxed">Exclusive features with drag-and-drop, multi-select, and 30-day soft-delete to keep your workspace clean.</p>
+          </div>
+          <div class="text-[5rem] sm:text-[7rem] md:text-[9rem] font-bold text-white/5 leading-none text-right mt-6 sm:mt-8 -mb-4 sm:-mb-6 -mr-3 sm:-mr-4 group-hover:text-white/10 transition-colors duration-300">03</div>
+        </div>
+        <div class="min-w-[260px] sm:min-w-[300px] md:min-w-[380px] bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between snap-start relative overflow-hidden group hover:bg-white/10 transition-colors duration-300">
+          <div class="relative z-10">
+            <h3 class="text-xl sm:text-2xl font-semibold mb-3 text-white">Local-First</h3>
+            <p class="text-xs sm:text-sm text-gray-400 leading-relaxed">Enjoy complete privacy and offline functionality with zero accounts required and maximum security.</p>
+          </div>
+          <div class="text-[5rem] sm:text-[7rem] md:text-[9rem] font-bold text-white/5 leading-none text-right mt-6 sm:mt-8 -mb-4 sm:-mb-6 -mr-3 sm:-mr-4 group-hover:text-white/10 transition-colors duration-300">04</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section id="privacy" class="py-16 sm:py-24 wide-container-md w-full border-t border-white/5 reveal">
+      <div class="glass p-6 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl">
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-3">Privacy</span>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-light mb-6 sm:mb-8">The policy is written from the code.</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <div class="text-xs sm:text-sm text-gray-400 leading-relaxed flex flex-col gap-4 sm:gap-6">
+            <p>No analytics, no trackers, no advertising, no third-party SDKs. Sessions live in <code class="bg-white/10 px-2 py-1 rounded text-xs text-white">chrome.storage.local</code> and work fully offline with no account.</p>
+            <p>The only network calls the extension ever makes are to its own backend — and only when an account feature you switched on requires it. Local-only mode hard-disables all of it.</p>
+          </div>
+          <div class="flex flex-col gap-3 sm:gap-4 text-xs sm:text-sm justify-center">
+            <a href="privacy.html" class="group flex items-center justify-between bg-white/5 hover:bg-white/10 p-3 sm:p-4 rounded-xl transition-colors"><span>Read the full privacy policy</span><span class="group-hover:translate-x-1 transition-transform">→</span></a>
+            <a href="dashboard.html" class="group flex items-center justify-between bg-white/5 hover:bg-white/10 p-3 sm:p-4 rounded-xl transition-colors"><span>Web dashboard (optional)</span><span class="group-hover:translate-x-1 transition-transform">→</span></a>
+            <p class="text-gray-500 mt-2 sm:mt-4 text-center break-all">Questions: <a href="mailto:orbitabsnoreply@gmail.com" class="text-white hover:underline">orbitabsnoreply@gmail.com</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-16 sm:py-24 lg:py-32 wide-container w-full border-t border-white/5 reveal">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+        <div class="flex flex-col">
+          <span class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">FAQ</span>
+          <h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-light tracking-tighter leading-[0.95] sm:leading-[0.9] mb-6 sm:mb-8">Got questions?<br /><span class="text-gray-400">Every answer</span><br /><span class="font-bold text-white">right here.</span></h2>
+          <p class="text-gray-400 text-xs sm:text-sm max-w-sm mt-2 sm:mt-4">Fair questions. Everything you need to know about Orbitabs, local storage, and keeping your tabs safe.</p>
+        </div>
+        <div class="flex flex-col gap-3 sm:gap-4">
+          <div class="faq-item active border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">01</span>
+                <h3 class="text-base sm:text-xl font-medium text-white group-hover:text-gray-300 transition-colors">Is it really free?</h3>
+              </div>
+              <span class="faq-icon text-white text-xl sm:text-2xl font-light leading-none shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Yes — save, restore, crash recovery, organizer and import/export are free with no account. Cloud sync is free up to 100 saved sessions. A paid "Pro" (unlimited sync) may come later; core features will never be behind a paywall.</p>
+              <a href="#" class="inline-block bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-5 sm:px-6 py-2 rounded-full transition-colors mb-3 sm:mb-4">Add to Chrome</a>
+            </div>
+          </div>
+          <div class="faq-item border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">02</span>
+                <h3 class="text-base sm:text-xl font-medium text-gray-400 group-hover:text-white transition-colors">What data leaves my device?</h3>
+              </div>
+              <span class="faq-icon text-gray-400 text-xl sm:text-2xl font-light leading-none group-hover:text-white transition-colors shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Nothing by default. Everything stays in your browser's storage. Cloud sync is opt-in and off by default; when you enable it, your saved sessions (URLs, titles, structure) upload to our own backend — never page content, never trash. See the privacy policy for the exact list.</p>
+            </div>
+          </div>
+          <div class="faq-item border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">03</span>
+                <h3 class="text-base sm:text-xl font-medium text-gray-400 group-hover:text-white transition-colors">How is this different from Chrome's "continue where you left off"?</h3>
+              </div>
+              <span class="faq-icon text-gray-400 text-xl sm:text-2xl font-light leading-none group-hover:text-white transition-colors shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Chrome restores only its last session, gives you no named sessions or recovery points, and loses everything on a profile-level crash. Orbitabs keeps multiple named sessions, auto-snapshots, and rebuilds groups, pinned tabs and window focus exactly.</p>
+            </div>
+          </div>
+          <div class="faq-item border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">04</span>
+                <h3 class="text-base sm:text-xl font-medium text-gray-400 group-hover:text-white transition-colors">Will it close, reorder or group my tabs by itself?</h3>
+              </div>
+              <span class="faq-icon text-gray-400 text-xl sm:text-2xl font-light leading-none group-hover:text-white transition-colors shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Never. You act, Orbitabs follows. Destructive actions are always confirmed, soft-deleted, and recoverable from Trash for 30 days.</p>
+            </div>
+          </div>
+          <div class="faq-item border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">05</span>
+                <h3 class="text-base sm:text-xl font-medium text-gray-400 group-hover:text-white transition-colors">Which browsers are supported?</h3>
+              </div>
+              <span class="faq-icon text-gray-400 text-xl sm:text-2xl font-light leading-none group-hover:text-white transition-colors shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Chrome 116 and newer (Chromium-based Edge support is planned). Firefox is the most-requested port — it isn't built yet, and we don't ship dates we can't keep.</p>
+            </div>
+          </div>
+          <div class="faq-item border-b border-white/20 pb-3 sm:pb-4">
+            <button class="w-full flex justify-between items-center text-left py-3 sm:py-4 focus:outline-none group gap-3">
+              <div class="flex items-start gap-3 sm:gap-6">
+                <span class="text-xs sm:text-sm text-gray-500 font-mono mt-1">06</span>
+                <h3 class="text-base sm:text-xl font-medium text-gray-400 group-hover:text-white transition-colors">How do I back up or move my sessions?</h3>
+              </div>
+              <span class="faq-icon text-gray-400 text-xl sm:text-2xl font-light leading-none group-hover:text-white transition-colors shrink-0">+</span>
+            </button>
+            <div class="faq-content pl-8 sm:pl-12 pr-2 sm:pr-4">
+              <p class="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3 sm:mb-4">Settings → export a single JSON file. Import is additive and never overwrites what you have. An optional account adds cross-device sync, a web dashboard and 30-day share links.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-20 sm:py-24 md:py-32 px-4 text-center border-t border-white/5 reveal relative overflow-hidden">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[400px] h-[300px] sm:h-[400px] bg-white/5 rounded-full blur-[80px] pointer-events-none"></div>
+      <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-3 sm:mb-4 relative z-10">Get Orbitabs</span>
+      <h2 class="text-3xl sm:text-4xl md:text-6xl font-light mb-4 sm:mb-6 relative z-10 text-glow">Stop losing your tabs.</h2>
+      <p class="text-xs sm:text-sm md:text-base text-gray-400 mb-8 sm:mb-10 max-w-md mx-auto relative z-10">Free on the Chrome Web Store. No account required to start — install and press <span class="kbd">Alt+Shift+S</span>.</p>
+      <a href="#" class="inline-block bg-white text-black px-8 sm:px-12 py-3 sm:py-4 rounded-full text-xs sm:text-sm font-semibold hover:bg-gray-200 hover:scale-105 transition-all duration-300 mb-4 sm:mb-6 relative z-10 shadow-[0_0_30px_rgba(255,255,255,0.2)]">Add to Chrome — free</a>
+      <p class="text-[10px] sm:text-xs text-gray-600 relative z-10 px-4">Store link goes live on launch day. Questions before then:<br class="sm:hidden" /><a href="mailto:orbitabsnoreply@gmail.com" class="hover:underline break-all">orbitabsnoreply@gmail.com</a></p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="relative w-full overflow-hidden z-10 border-t border-white/10">
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[200px] bg-white/[0.04] blur-[100px] rounded-full pointer-events-none"></div>
+
+      <div class="relative z-10 wide-container-md pt-14 sm:pt-20 pb-10">
+        <div class="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-10 pb-10 sm:pb-12 border-b border-white/10">
+          
+          <!-- Brand column with NEW LOGO -->
+          <div class="col-span-2 md:col-span-4 flex flex-col gap-5">
+            <a href="index.html" aria-label="Orbitabs home" class="flex items-center mb-1"><img src="orbitabs-wordmark.png" alt="Orbitabs" class="h-10 sm:h-12 w-auto object-contain" /></a>
+            <p class="text-xs sm:text-[13px] text-gray-400 leading-relaxed max-w-[280px]">Save your Chrome tabs, groups and windows — and get them back exactly. Local-first, no account required.</p>
+            
+            <div class="inline-flex items-center gap-2 text-[10px] text-gray-400 glass rounded-full px-3 py-1.5 w-fit">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+              Local-first · No trackers
+            </div>
+
+            <a href="#" class="inline-flex items-center justify-center gap-2 bg-white text-black px-5 py-2.5 rounded-full text-xs font-semibold hover:bg-gray-200 hover:scale-[1.03] transition-all duration-300 w-fit mt-1">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v12" />
+                <path d="m7 11 5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+              Add to Chrome — free
+            </a>
+          </div>
+
+          <!-- Product -->
+          <div class="col-span-1 md:col-span-2 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Product</h4>
+            <ul class="flex flex-col gap-3 text-xs sm:text-[13px] text-gray-400">
+              <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+              <li><a href="#how-it-works" class="hover:text-white transition-colors">How it works</a></li>
+              <li><a href="#features" class="hover:text-white transition-colors">Organizer</a></li>
+              <li><a href="dashboard.html" class="hover:text-white transition-colors">Dashboard</a></li>
+            </ul>
+          </div>
+
+          <!-- Resources -->
+          <div class="col-span-1 md:col-span-2 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Resources</h4>
+            <ul class="flex flex-col gap-3 text-xs sm:text-[13px] text-gray-400">
+              <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
+              <li><a href="#privacy" class="hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a href="#" class="hover:text-white transition-colors">Changelog</a></li>
+            </ul>
+          </div>
+
+          <!-- Stay in orbit -->
+          <div class="col-span-2 md:col-span-4 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Stay in orbit</h4>
+            <p class="text-xs sm:text-[13px] text-gray-400 leading-relaxed">Questions, feedback, or a browser port request? Write us — we read everything.</p>
+            <a href="mailto:orbitabsnoreply@gmail.com" class="group flex items-center justify-between bg-white/5 hover:bg-white/10 px-3 py-2.5 rounded-lg text-xs text-gray-300 transition-colors">
+              <span class="truncate">orbitabsnoreply@gmail.com</span>
+              <span class="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2">→</span>
+            </a>
+
+            <!-- Social icons -->
+            <div class="flex items-center gap-2 mt-1">
+              <a href="#" aria-label="X / Twitter" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="#" aria-label="GitHub" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              </a>
+              <a href="mailto:orbitabsnoreply@gmail.com" aria-label="Email" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
+          <p class="text-[10px] sm:text-[11px] text-gray-600 text-center sm:text-left order-2 sm:order-1">© 2026 Orbitabs — built local-first. No analytics, no trackers, no accounts.</p>
+          <div class="flex items-center gap-5 order-1 sm:order-2">
+            <span class="hidden sm:inline text-[10px] text-gray-700 font-mono">v1.0.0</span>
+            <button id="back-to-top" class="group flex items-center gap-1.5 text-[10px] sm:text-[11px] text-gray-500 hover:text-white uppercase tracking-widest transition-colors py-2">
+              Back to top
+              <svg class="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m0 0l-6 6m6-6l6 6" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Giant faded wordmark (Now in Poiret One font) -->
+      <div class="relative w-full overflow-hidden pointer-events-none select-none" aria-hidden="true">
+        <h2 class="text-center font-normal tracking-tighter leading-[0.75] text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[13vw] xl:text-[12vw] whitespace-nowrap bg-gradient-to-b from-white/[0.09] via-white/[0.04] to-transparent bg-clip-text text-transparent" style="font-family: 'Poiret One', cursive;">
+          ORBITABS
+        </h2>
+      </div>
+    </footer>
+
+    <script>
+      function initOrbitabs() {
+        var navSafetyTimeout = setTimeout(function () {
+          var nav = document.querySelector("nav");
+          if (nav && parseFloat(window.getComputedStyle(nav).opacity) < 0.9) {
+            nav.style.opacity = "1";
+            nav.style.visibility = "visible";
+            nav.style.transform = "translateY(0)";
+          }
+        }, 2500);
+
+        var menuBtn = document.getElementById("menu-btn");
+        var mobileMenu = document.getElementById("mobile-menu");
+        var mobileLinks = document.querySelectorAll(".mobile-link");
+
+        function closeMobileMenu() {
+          if (mobileMenu) mobileMenu.classList.add("hidden-menu");
+          if (menuBtn) menuBtn.classList.remove("open");
+        }
+
+        if (menuBtn && mobileMenu) {
+          menuBtn.addEventListener("click", function () {
+            var isHidden = mobileMenu.classList.contains("hidden-menu");
+            if (isHidden) {
+              mobileMenu.classList.remove("hidden-menu");
+              menuBtn.classList.add("open");
+            } else {
+              closeMobileMenu();
+            }
+          });
+          mobileLinks.forEach(function (link) {
+            link.addEventListener("click", closeMobileMenu);
+          });
+          window.addEventListener("hashchange", closeMobileMenu);
+          window.addEventListener("resize", function () {
+            if (window.innerWidth >= 768) closeMobileMenu();
+          });
+        }
+
+        // Back to top
+        var backToTop = document.getElementById("back-to-top");
+        if (backToTop) {
+          backToTop.addEventListener("click", function (e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        }
+
+        if (typeof gsap === "undefined") return;
+
+        try {
+          if (typeof ScrollTrigger !== "undefined") {
+            gsap.registerPlugin(ScrollTrigger);
+          }
+
+          const tl = gsap.timeline({
+            defaults: { clearProps: "all" },
+            onComplete: function () {
+              clearTimeout(navSafetyTimeout);
+            },
+          });
+
+          tl.from("nav", { y: -50, opacity: 0, duration: 1, ease: "power3.out" })
+            .from(".hero-badge", { y: 20, opacity: 0, duration: 0.8, ease: "power3.out" }, "-=0.5")
+            .from(".hero-title span", { y: 30, opacity: 0, duration: 1, stagger: 0.2, ease: "power3.out" }, "-=0.6")
+            .from(".hero-desc", { y: 20, opacity: 0, duration: 0.8, ease: "power3.out" }, "-=0.6")
+            .from(".hero-btns a", { y: 20, opacity: 0, duration: 0.8, stagger: 0.1, ease: "power3.out" }, "-=0.6")
+            .from(".hero-bullets li", { y: 15, opacity: 0, duration: 0.6, stagger: 0.08, ease: "power2.out" }, "-=0.5")
+            .from(".hero-shortcuts", { opacity: 0, duration: 1, ease: "power3.out" }, "-=0.4");
+
+          gsap.to(".orbit-ring-3", { rotation: 360, duration: 80, repeat: -1, ease: "none" });
+          gsap.to(".hero-glow", { scale: 1.1, opacity: 0.15, duration: 4, yoyo: true, repeat: -1, ease: "sine.inOut" });
+
+          if (typeof ScrollTrigger !== "undefined") {
+            gsap.from("#how-it-works .flex-col span", {
+              scrollTrigger: { trigger: "#how-it-works", start: "top 75%" },
+              y: 50,
+              opacity: 0,
+              duration: 1.2,
+              stagger: 0.1,
+              ease: "power3.out",
+              clearProps: "all",
+            });
+
+            document.querySelectorAll(".reveal").forEach(function (el) {
+              gsap.from(el, {
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 85%",
+                  toggleActions: "play none none reverse",
+                },
+                y: 60,
+                opacity: 0,
+                duration: 1.2,
+                ease: "power3.out",
+                clearProps: "all",
+              });
+            });
+          }
+        } catch (err) {
+          console.error("[Orbitabs] Animation error:", err);
+          var showList = ["nav", ".hero-badge", ".hero-title span", ".hero-desc", ".hero-btns a", ".hero-shortcuts", ".hero-bullets li", ".reveal"];
+          showList.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (el) {
+              el.style.opacity = "1";
+              el.style.visibility = "visible";
+              el.style.transform = "none";
+            });
+          });
+        }
+
+        var slider = document.getElementById("cards-slider");
+        var scrollLeft = document.getElementById("scroll-left");
+        var scrollRight = document.getElementById("scroll-right");
+        if (slider && scrollLeft && scrollRight) {
+          var scrollAmount = window.innerWidth < 640 ? 280 : 400;
+          scrollLeft.addEventListener("click", function () {
+            slider.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+          });
+          scrollRight.addEventListener("click", function () {
+            slider.scrollBy({ left: scrollAmount, behavior: "smooth" });
+          });
+        }
+
+        var faqItems = document.querySelectorAll(".faq-item");
+        faqItems.forEach(function (item) {
+          var btn = item.querySelector("button");
+          if (!btn) return;
+          btn.addEventListener("click", function () {
+            faqItems.forEach(function (other) {
+              if (other !== item) other.classList.remove("active");
+            });
+            item.classList.toggle("active");
+          });
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initOrbitabs);
+      } else {
+        initOrbitabs();
+      }
+    </script>
+  </body>
+</html>

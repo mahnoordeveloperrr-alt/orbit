@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Orbitabs",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Save and restore your browser sessions instantly.",
   "minimum_chrome_version": "116",
   "icons": {
@@ -14,18 +14,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": [
-    "http://localhost:5000/*",
-    "http://127.0.0.1:5000/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["markup-core.js", "markup-overlay.js"],
-      "css": ["markup-overlay.css"],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_popup": "index.html",
     "default_title": "Orbitabs",

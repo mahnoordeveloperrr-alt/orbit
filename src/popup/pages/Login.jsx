@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { loginUser, registerUser } from '../../services/api';
+import { loginUser, registerUser, forgotPassword, saveTokens } from '../../services/api';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import { Layers, CircleAlert, CheckCircle2 } from 'lucide-react';
+import { CircleAlert, CheckCircle2 } from 'lucide-react';
 
 export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
   // 🆕 Settings → Account can deep-link straight into "Create account".
   const [isLogin, setIsLogin] = useState(initialMode !== 'register');
+  // 🔑 view: 'form' = login/register, 'forgot' = password recovery.
+  const [view, setView] = useState('form');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -17,12 +19,21 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    
+
     try {
       let res;
+      if (view === 'forgot') {
+        // 🔑 Server always answers generically (no account enumeration) and
+        //    emails a single-use 30-minute reset link on a real account.
+        res = await forgotPassword(email);
+        setSuccessMsg(res.data.message || 'If that email has an account, a reset link is on its way.');
+        return;
+      }
       if (isLogin) {
         res = await loginUser({ email, password });
-        localStorage.setItem('token', res.data.token);
+        // 🔑 Store the pair: access JWT + per-device rotating refresh token
+        //    (mirrored into chrome.storage.local for the service worker).
+        saveTokens({ token: res.data.token, refreshToken: res.data.refreshToken });
         onLogin(true); // Login ho gaya
       } else {
         res = await registerUser({ name, email, password });
@@ -36,29 +47,27 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong');
+      setError(err.response?.data?.error || err.message || 'Something went wrong');
     }
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-primary to-zinc-100/80 dark:from-primary dark:to-secondary/70 p-6 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-zinc-300 dark:bg-zinc-800 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-zinc-200 dark:bg-zinc-900 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
-
+    <div className="w-full h-full bg-primary p-6 flex flex-col items-center justify-center relative overflow-hidden">
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-        <div className="bg-accent p-4 rounded-[14px] mb-4 text-accentInk">
-          <Layers size={28} />
-        </div>
-        <h1 className="text-2xl font-bold text-textMain mb-1 tracking-tight">Orbitabs</h1>
+        <img
+          src="/brand/orbitabs-wordmark.png"
+          alt="Orbitabs"
+          className="h-12 w-48 object-contain mb-2 dark:invert-0 invert"
+        />
         <p className="text-textMuted text-sm mb-6 font-medium">
-          {isLogin ? 'Welcome back' : 'Create your account'}
+          {view === 'forgot' ? 'Reset your password' : isLogin ? 'Welcome back' : 'Create your account'}
         </p>
 
         {error && <div className="w-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl mb-4 text-center flex items-center justify-center gap-1.5"><CircleAlert size={14} className="flex-shrink-0" />{error}</div>}
         {successMsg && <div className="w-full bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 text-sm p-3 rounded-xl mb-4 text-center flex items-center justify-center gap-1.5"><CheckCircle2 size={14} className="flex-shrink-0" />{successMsg}</div>}
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
-          {!isLogin && (
+          {view === 'form' && !isLogin && (
             <Input
               type="text"
               value={name}
@@ -72,27 +81,58 @@ export default function Login({ onLogin, onCancel, initialMode = 'login' }) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
           />
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-          />
+          {view === 'form' && (
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+            />
+          )}
           <Button type="submit" className="w-full py-3 text-base mt-2">
-            {isLogin ? 'Login' : 'Register'}
+            {view === 'forgot' ? 'Send reset link' : isLogin ? 'Login' : 'Register'}
           </Button>
         </form>
 
-        <button 
-          onClick={() => {
-            setIsLogin(!isLogin);
-            setError('');
-            setSuccessMsg('');
-          }} 
-          className="mt-5 text-sm text-textMuted hover:text-accent transition-colors underline decoration-2 underline-offset-4 decoration-transparent hover:decoration-accent"
-        >
-          {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-        </button>
+        {view === 'form' && (
+          <button
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setError('');
+              setSuccessMsg('');
+            }}
+            className="mt-5 text-sm text-textMuted hover:text-textMain transition-colors underline decoration-2 underline-offset-4 decoration-transparent hover:decoration-accent"
+          >
+            {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
+          </button>
+        )}
+
+        {/* 🔑 Password recovery — link only makes sense on the login form */}
+        {view === 'form' && isLogin && (
+          <button
+            onClick={() => {
+              setView('forgot');
+              setError('');
+              setSuccessMsg('');
+              setPassword('');
+            }}
+            className="mt-2 text-sm text-textMuted hover:text-textMain transition-colors"
+          >
+            Forgot password?
+          </button>
+        )}
+        {view === 'forgot' && (
+          <button
+            onClick={() => {
+              setView('form');
+              setError('');
+              setSuccessMsg('');
+            }}
+            className="mt-5 text-sm text-textMuted hover:text-textMain transition-colors underline decoration-2 underline-offset-4 decoration-transparent hover:decoration-accent"
+          >
+            ← Back to login
+          </button>
+        )}
 
         {/* 🆕 MANDATORY-ACCOUNT RULE: signing in is never required to use the app */}
         {onCancel && (

@@ -22,7 +22,16 @@ const SessionSchema = new mongoose.Schema({
   autoKey: { type: String, default: null },
   // 🆕 Soft delete (Trash + Undo): null = live, Date = moved to trash
   deletedAt: { type: Date, default: null },
-  createdAt: { type: Date, default: Date.now }
+  // 🆕 Session metadata (V1.5) — organization only, never restorable state.
+  //    Same shape the popup normalizes (sessionSchema.js): tags = unique
+  //    trimmed strings, note = short free text, folder = single label.
+  tags: { type: [String], default: [] },
+  note: { type: String, default: '' },
+  folder: { type: String, default: null },
+  createdAt: { type: Date, default: Date.now },
+  // 🆕 Full-library sync — last-write-wins conflict resolution needs a real
+  //    edit timestamp (createdAt alone can't move when a doc is updated).
+  updatedAt: { type: Date, default: Date.now }
 });
 
 

@@ -1,0 +1,39 @@
+# ============================================================================
+# Orbitabs backend — Render deploy blueprint (runbook §8)
+# ----------------------------------------------------------------------------
+# This is the ONLY thing standing between the code and a live production API.
+# The backend is already hardened + tested (launch-hardening 28, sync-account
+# 17, e2e-cloudsync 25) — this file makes the deploy itself a form-fill.
+#
+# One-click path:
+#   1. mongodb.com/atlas → Free (M0) cluster → DB user + Network Access 0.0.0.0/0
+#      → Connect → Drivers → copy the connection string
+#   2. render.com → New → Blueprint → point at this repo (this file is read
+#      automatically) → fill the two env vars below → Deploy
+#   3. Extension Settings → Server URL → https://<your-service>.onrender.com
+#
+# No code changes needed: server.js reads MONGO_URI / JWT_SECRET / PORT /
+# ALLOWED_ORIGINS / TRUST_PROXY exactly as defined here.
+# ============================================================================
+
+services:
+  - type: web
+    name: orbitabs-api
+    runtime: node
+    plan: free                 # free tier is fine for launch (spins down idle)
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health   # server.js answers 200 { ok: true }
+    envVars:
+      - key: MONGO_URI
+        sync: false            # paste your Atlas SRV string (never commit it)
+      - key: JWT_SECRET
+        generateValue: true     # auto-rotated per environment — never shared
+      - key: PORT
+        value: 10000            # Render's injected port is honored via process.env.PORT; this is the fallback
+      - key: ALLOWED_ORIGINS
+        sync: false             # optional: comma-separated web origins to allow
+      - key: TRUST_PROXY
+        value: "1"              # Render IS the proxy — rate limiting keys on X-Forwarded-For
+      - key: FORCE_HTTPS
+        value: "1"              # Render terminates TLS; emit HSTS + honor redirects

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbitabs — Web Dashboard</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="./dashboard.css" />
+</head>
+<body>
+  <!-- 🔐 AUTH GATE — hidden until sign-in; the share-import banner rides on top
+       when the page was opened with ?share= (B5 claim flow). -->
+  <section id="auth-view" class="view hidden">
+    <div class="auth-card">
+      <h1 class="logo">Orbit<span>abs</span></h1>
+      <p class="tagline">Your saved sessions, in any browser.</p>
+      <div id="share-banner" class="share-banner hidden">
+        🔗 You've been shared a session — sign in to import it.
+      </div>
+      <form id="login-form" autocomplete="on">
+        <label>Email
+          <input id="email" type="email" required autocomplete="username" placeholder="you@example.com" />
+        </label>
+        <label>Password
+          <input id="password" type="password" required autocomplete="current-password" placeholder="••••••••" minlength="8" />
+        </label>
+        <button type="submit" id="login-btn" class="btn primary">Sign in</button>
+      </form>
+      <p id="auth-error" class="error hidden"></p>
+      <p class="hint">No account yet? Create one in the Orbitabs extension (Settings → Account),
+        or <a href="#" id="forgot-link">forgot password</a> — we'll email a reset link.</p>
+    </div>
+  </section>
+
+  <!-- 🗂️ APP — sessions, search, share-import, plan card -->
+  <section id="app-view" class="view hidden">
+    <header class="topbar">
+      <h1 class="logo small">Orbit<span>abs</span></h1>
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Search sessions, tags, notes, URLs…" />
+      </div>
+      <div class="topbar-right">
+        <span id="plan-chip" class="chip plan-free">…</span>
+        <span id="user-email" class="user-email"></span>
+        <button id="signout-btn" class="btn ghost">Sign out</button>
+      </div>
+    </header>
+
+    <div id="import-card" class="import-card hidden"></div>
+
+    <main class="container">
+      <aside class="sidebar">
+        <h3>Folders</h3>
+        <ul id="folder-list"><li class="muted">All sessions</li></ul>
+        <div id="plan-card" class="plan-card"></div>
+      </aside>
+      <div class="content">
+        <div id="status-line" class="status-line"></div>
+        <div id="session-list" class="session-list"></div>
+      </div>
+    </main>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="./dashboard.js"></script>
+</body>
+</html>

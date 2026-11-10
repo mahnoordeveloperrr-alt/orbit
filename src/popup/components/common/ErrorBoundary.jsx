@@ -46,7 +46,7 @@ export default class ErrorBoundary extends React.Component {
     if (!this.props.emergency) return null;
 
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-zinc-50 via-zinc-100 to-zinc-200 dark:from-primary dark:via-secondary dark:to-primary">
+      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-primary">
         <div className="bg-primary/80 border border-amber-500/30 rounded-2xl p-5 max-w-[340px] text-center shadow-premium">
           <AlertTriangle size={28} className="text-amber-500 mx-auto mb-2" />
           <h1 className="text-base font-bold text-textMain mb-1">Orbitabs hit a snag</h1>

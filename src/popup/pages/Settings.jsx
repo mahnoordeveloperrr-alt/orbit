@@ -3,13 +3,21 @@ import {
   ArrowLeft, Shield, Palette, Cloud, CloudOff, HardDrive, RefreshCw,
   Download, Upload, Trash2, Keyboard, SlidersHorizontal,
   RotateCcw, Eraser, History, XCircle, Info, LogIn, UserPlus, LogOut,
-  Moon, Sun, Laptop, Check, Ban, TriangleAlert
+  Moon, Sun, Check, Ban, TriangleAlert, UserX, Sparkles, CreditCard
 } from 'lucide-react';
 import {
   getSettings, setSetting, getSessions, importSessions,
   emptyTrash, resetAllLocalData, getLocalDataStats
 } from '../../services/store';
+// 🔥 GDPR account deletion — cloud-side wipe (local Chrome data untouched)
+// 💰 getPlan — the SERVER's entitlement answer (plan + usage), never a local guess
+// 🛒 startCheckout/getBillingConfig — hosted billing (B3): the Upgrade card
+//    only promises what the server can actually do today.
+import {
+  deleteAccount, getPlan, startCheckout, getBillingConfig
+} from '../../services/api';
 import { downloadBackupFile, pickBackupFile, parseBackupText } from '../utils/sessionBackup';
+import { timeAgo } from '../utils/sessionStats';
 import ConfirmModal from '../components/common/ConfirmModal';
 
 // 🧭 Settings — the user's control room. Every control here maps to a REAL
@@ -40,19 +48,138 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
   // 🧹 Data-management status + confirm-gated destructive actions
   const [dataMsg, setDataMsg] = useState(null);
   const [confirm, setConfirm] = useState(null); // 'trash' | 'recovery' | 'reset'
+  // 🔥 Account deletion — inline password confirmation (Account / Sync section)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletePw, setDeletePw] = useState('');
+  const [deleteErr, setDeleteErr] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  // ☁️ Cloud sync status (orbi_sync_status written by the worker's syncLibrary)
+  const [syncStatus, setSyncStatus] = useState(null); // { lastSyncAt, pushed, updated, pulled, deleted, restored, lastError }
+  const [syncBusy, setSyncBusy] = useState(false);
+  // 💰 Server-side plan/usage (GET /api/me/plan) — shows the real quota, not a guess
+  const [plan, setPlan] = useState(null); // { plan, limits, usage } | null
+  // 🛒 Billing state (B3) — configured? + checkout busy/message
+  const [billingCfg, setBillingCfg] = useState(null); // { configured, portalUrl } | null
+  const [upgradeBusy, setUpgradeBusy] = useState(false);
+  const [upgradeMsg, setUpgradeMsg] = useState(null); // { kind: 'ok' | 'err', text }
 
   useEffect(() => {
     getSettings().then(setSettings).catch(() => {});
     loadDiag();
+    loadSyncStatus();
   }, []);
 
+  // 💰 Plan/usage follows the sign-in state (separate effect so a cloudUser
+  //    change doesn't re-run the mount-only loads above).
+  useEffect(() => {
+    if (cloudUser) {
+      getPlan().then(r => setPlan(r.data)).catch(() => setPlan(null));
+      getBillingConfig().then(r => setBillingCfg(r.data)).catch(() => setBillingCfg(null));
+    } else {
+      setPlan(null);
+      setBillingCfg(null);
+    }
+  }, [cloudUser]);
+
+  /** 🛒 Upgrade (B3) — hand off to the HOSTED checkout (Lemon Squeezy MoR;
+   *  tax/VAT is their problem, not ours). The plan itself only ever flips
+   *  through the server-side webhook after payment — this button cannot. */
+  const handleUpgrade = async () => {
+    if (upgradeBusy) return;
+    setUpgradeBusy(true);
+    setUpgradeMsg(null);
+    try {
+      const r = await startCheckout();
+      const url = r.data?.url;
+      if (!url) throw new Error('Checkout did not return a URL.');
+      setUpgradeMsg({ kind: 'ok', text: 'Opening secure checkout — your plan updates automatically after payment.' });
+      chrome.tabs.create({ url });
+    } catch (err) {
+      const d = err.response?.data;
+      setUpgradeMsg({
+        kind: 'err',
+        text: d?.code === 'billing-not-configured'
+          ? 'Payments are not live on this server yet — nothing was charged.'
+          : (d?.error || 'Could not start checkout — please try again.'),
+      });
+    } finally {
+      setUpgradeBusy(false);
+    }
+  };
+
   const update = async (patch) => setSettings(await setSetting(patch));
+
+  /** GDPR "delete my data": password-confirmed server wipe of the account
+   *  + every cloud session, then a clean local sign-out. Local sessions in
+   *  Chrome are never touched (they never left this device). */
+  const handleDeleteAccount = async () => {
+    if (!deletePw || deleteBusy) return;
+    setDeleteBusy(true);
+    setDeleteErr('');
+    try {
+      await deleteAccount(deletePw);
+      setShowDeleteAccount(false);
+      setDeletePw('');
+      onLogout(); // clears the token + returns to the dashboard
+    } catch (err) {
+      setDeleteErr(err.response?.data?.error || err.message || 'Could not delete the account — please try again.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const loadSyncStatus = async () => {
+    try {
+      const d = await chrome.storage.local.get('orbi_sync_status');
+      setSyncStatus(d.orbi_sync_status || null);
+    } catch { setSyncStatus(null); }
+  };
+
+  /** ☁️ "Sync now" — runs both halves (Live Backup + saved-session library)
+   *  in the worker and refreshes the honest status line. */
+  const handleSyncNow = async () => {
+    if (syncBusy) return;
+    setSyncBusy(true);
+    setBackupMsg(null);
+    try {
+      const res = await chrome.runtime.sendMessage({ type: 'SYNC_NOW' });
+      await loadSyncStatus();
+      if (!res?.ok) throw new Error(res?.error || 'Sync failed');
+      const lib = res.result?.library || {};
+      const skipped = res.result?.skipped || lib.skipped;
+      if (lib.error) {
+        setBackupMsg({ kind: 'err', text: 'Session sync failed. Local sessions are safe; try Sync now again.' });
+      } else if (skipped) {
+        const why = {
+          'local-only': 'Local-only mode is on — no network calls are made.',
+          'cloud-sync-off': 'Cloud sync is off — turn the toggle on first.',
+          'not-logged-in': 'Sign in to sync your sessions.',
+          'backend-unreachable': 'Server unreachable — check the Server URL, will retry automatically.',
+          'server-not-configured': 'No Server URL configured — set one in Privacy & Data.',
+          'auth-expired': 'Session expired — sign in again to resume cloud sync.',
+        }[skipped] || `Skipped: ${skipped}`;
+        setBackupMsg({ kind: 'err', text: why });
+      } else if (lib.lastError === 'quota-exceeded') {
+        setBackupMsg({ kind: 'err', text: 'Cloud storage limit reached. Your local sessions are safe; remove synced sessions or upgrade, then try again.' });
+      } else if ((lib.failedSessions || 0) > 0) {
+        setBackupMsg({ kind: 'err', text: lib.failedSessions + ' session(s) could not sync. Your local sessions are safe; try again.' });
+      } else {
+        const extra = (lib.deleted ? ` · ${lib.deleted} deletions` : '') + (lib.restored ? ` · ${lib.restored} restores` : '');
+        setBackupMsg({ kind: 'ok', text: `Synced ✓ ${lib.pushed || 0} uploaded · ${lib.updated || 0} updated · ${lib.pulled || 0} downloaded${extra}` });
+      }
+    } catch (err) {
+      await loadSyncStatus();
+      setBackupMsg({ kind: 'err', text: err.message || 'Sync failed — will retry automatically.' });
+    } finally {
+      setSyncBusy(false);
+    }
+  };
 
   const loadDiag = async () => {
     try {
       const d = await chrome.storage.local.get([
         'snapshot', 'snapshotAt', 'lastAlive', 'cleanExit',
-        'recoveryPoints', 'recoveryCandidate'
+        'recoveryPoints', 'recoveryCandidate', 'lastStartupCheck'
       ]);
       const tabs = (d.snapshot?.windows || []).reduce((n, w) => n + (w.tabs?.length || 0), 0);
       setDiag({
@@ -66,7 +193,11 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           tabs: (p.windows || []).reduce((n, w) => n + (w.tabs?.length || 0), 0),
           windows: (p.windows || []).length
         })),
-        crashQueued: !!d.recoveryCandidate
+        crashQueued: !!d.recoveryCandidate,
+        // 🚀 onStartup delivery marker — written ONLY inside the onStartup
+        // listener (background.js), so its presence proves the event fired.
+        startupCheck: d.lastStartupCheck && typeof d.lastStartupCheck === 'object'
+          ? d.lastStartupCheck : null
       });
     } catch { setDiag(null); }
   };
@@ -182,7 +313,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
 
   if (!settings) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-zinc-50 via-zinc-100 to-zinc-200 p-5 flex flex-col relative overflow-hidden">
+      <div className="w-full h-full bg-primary p-5 flex flex-col relative overflow-hidden">
         <Header onBack={onBack} />
         <div className="flex-1 flex items-center justify-center text-textMuted text-sm">Loading settings…</div>
       </div>
@@ -190,10 +321,9 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-zinc-50 via-zinc-100 to-zinc-200 dark:from-primary dark:via-secondary dark:to-primary p-5 flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-300 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+    <div className="w-full h-full bg-primary p-5 flex flex-col relative overflow-hidden">
+      <Header />
 
-      <Header onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto relative z-10 custom-scrollbar space-y-4">
 
@@ -211,6 +341,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <Row
               title="Auto-save frequency"
               desc="How often your live state is snapshotted"
+              stacked
             >
               <select
                 value={settings.autoSaveFreqSec}
@@ -225,6 +356,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <Row
             title="Save scope"
             desc="Save button captures ALL open windows, or only the Current window (also settable per-save in the popup)"
+            stacked
           >
             <Segmented
               value={settings.defaultScope}
@@ -236,6 +368,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <Row
             title="Restore behavior"
             desc="'Current window' restores into THIS window — its existing tabs are closed first; 'New window' never touches what you have open"
+            stacked
           >
             <Segmented
               value={settings.restoreBehavior}
@@ -276,7 +409,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             <select
               value={settings.maxRecoveryPoints}
               onChange={(e) => update({ maxRecoveryPoints: Number(e.target.value) })}
-              className="max-w-full truncate text-xs rounded-lg border border-zinc-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-zinc-800 dark:text-zinc-300 font-medium focus:outline-none"
+                className="w-full max-w-full text-xs rounded-lg border border-zinc-200 dark:border-borderLight bg-white dark:bg-secondary px-2 py-1.5 text-zinc-800 dark:text-zinc-300 font-medium focus:outline-none"
             >
               {RING_OPTIONS.map(n => <option key={n} value={n}>{n} points</option>)}
             </select>
@@ -324,7 +457,7 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <Row
             title="Cloud sync"
             desc={cloudUser
-              ? 'Copy saved sessions to your account (optional — local stays primary)'
+              ? 'Backs up your saved sessions AND your Live Backup to your account, so you can restore them on your other devices. Local stays primary.'
               : 'Optional — needs an account. Everything already works without it.'}
           >
             <Toggle
@@ -340,10 +473,25 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             />
           </Row>
 
+          {/* 🌍 Server URL — advanced override; empty = built-in default origin */}
+          <Row
+            title="Server URL"
+            desc="Backend endpoint for optional cloud features. Leave empty to use the built-in default."
+          >
+            <input
+              type="url"
+              value={settings.apiBaseUrl || ''}
+              onChange={(e) => update({ apiBaseUrl: e.target.value })}
+              placeholder="https://api.example.com"
+              disabled={settings.localOnly}
+              className="w-36 px-2 py-1.5 rounded-md border border-borderLight bg-primary text-textMain text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400/50 disabled:opacity-50"
+            />
+          </Row>
+
           {/* What data Orbitabs stores — plain-English guarantees */}
           <ul className="text-[11px] text-textMuted space-y-1.5 leading-relaxed mt-1">
             <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>Sessions, auto-save snapshots, and settings live only in <span className="font-semibold text-textMain">this browser's local storage</span> — they work offline.</span></li>
-            <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>Nothing is uploaded anywhere unless you sign in AND turn on cloud sync — and then only your saved sessions.</span></li>
+            <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>Nothing is uploaded anywhere unless you sign in AND turn on cloud sync — and then only your <span className="font-semibold text-textMain">saved sessions and Live Backup snapshot</span> (tab URLs/titles + window/group structure). Trashed sessions stay on this device.</span></li>
             <li className="flex items-start gap-1.5"><Check size={13} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" /><span>No analytics, no tracking, no ads. The only network call is your own backend when cloud sync is on.</span></li>
             <li className="flex items-start gap-1.5"><Ban size={13} className="text-red-500 mt-0.5 flex-shrink-0" /><span>Orbitabs never reads page content, never changes tabs you didn't act on, and never deletes without a confirm dialog.</span></li>
           </ul>
@@ -402,6 +550,90 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
               {cloudUser ? <><Check size={12} className="inline flex-shrink-0" /> Connected</> : 'Local'}
             </span>
           </div>
+          {/* ☁️ Sync status + manual trigger — honest, always-visible state */}
+          {cloudUser && (
+            <div className="mb-3 p-2.5 rounded-lg border border-borderLight bg-primary">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-textMain">
+                  {syncStatus?.lastSyncAt
+                    ? `Last synced ${timeAgo(syncStatus.lastSyncAt)}`
+                    : 'Not synced yet'}
+                </p>
+                <button
+                  onClick={handleSyncNow}
+                  disabled={syncBusy || settings?.localOnly}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accentInk text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  <RefreshCw size={11} className={syncBusy ? 'animate-spin' : ''} /> {syncBusy ? 'Syncing…' : 'Sync now'}
+                </button>
+              </div>
+              {syncStatus && !syncStatus.lastError && (syncStatus.pushed || syncStatus.updated || syncStatus.pulled || syncStatus.deleted || syncStatus.restored) ? (
+                <p className="text-[11px] text-textMuted mt-1">
+                  {syncStatus.pushed || 0} uploaded · {syncStatus.updated || 0} updated · {syncStatus.pulled || 0} downloaded
+                  {syncStatus.deleted ? ` · ${syncStatus.deleted} deleted` : ''}
+                  {syncStatus.restored ? ` · ${syncStatus.restored} restored` : ''}
+                </p>
+              ) : null}
+              {/* 💰🛒 B1/B3 — server-enforced plan card: honest quota + the
+                  Upgrade CTA only when checkout is actually configured. */}
+              {plan ? (
+                <div className="mt-2 p-2.5 rounded-lg border border-borderLight/60 bg-muted/40">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-textMain flex items-center gap-1.5">
+                      {plan.plan === 'pro' ? (
+                        <><Sparkles size={12} className="text-amber-500" /> Pro — unlimited sync</>
+                      ) : (
+                        <><Cloud size={12} className="text-accent" /> Free — {plan.usage?.syncedSessions ?? 0}/{plan.limits?.maxSyncedSessions ?? '—'} synced</>
+                      )}
+                    </p>
+                    {plan.plan === 'pro' ? (
+                      billingCfg?.portalUrl ? (
+                        <a
+                          href={billingCfg.portalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-medium text-accent hover:underline flex items-center gap-1 flex-shrink-0"
+                        >
+                          <CreditCard size={11} /> Manage billing
+                        </a>
+                      ) : null
+                    ) : billingCfg?.configured ? (
+                      <button
+                        onClick={handleUpgrade}
+                        disabled={upgradeBusy}
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-accent text-accentInk hover:opacity-90 disabled:opacity-50 flex items-center gap-1 flex-shrink-0"
+                      >
+                        <Sparkles size={11} /> {upgradeBusy ? 'Opening…' : 'Upgrade'}
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-textMuted flex-shrink-0">Checkout not live yet</span>
+                    )}
+                  </div>
+                  {plan.plan !== 'pro' && (
+                    <p className="text-[11px] text-textMuted mt-1 leading-relaxed">
+                      Pro removes the {plan.limits?.maxSyncedSessions ?? 100}-session sync cap and keeps
+                      the last 20 versions of every session (Free keeps {plan.features?.maxVersions ?? 3}).
+                      Sessions on this device are never capped, on any plan.
+                    </p>
+                  )}
+                  {upgradeMsg && (
+                    <p className={`text-[11px] mt-1 ${upgradeMsg.kind === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {upgradeMsg.text}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+              {syncStatus?.lastError ? (
+                <p className="text-[11px] text-red-600 dark:text-red-400 mt-1">
+                  {syncStatus.lastError === 'quota-exceeded'
+                    ? `Plan limit reached (${plan?.limits?.maxSyncedSessions ?? '…'} synced sessions) — sessions beyond the limit stay on this device. Unlimited sync arrives with the Pro plan.`
+                    : syncStatus.lastError === 'auth-expired'
+                      ? 'Session expired — sign in again to resume cloud sync.'
+                      : `Last sync failed (${syncStatus.lastError}) — will retry automatically.`}
+                </p>
+              ) : null}
+            </div>
+          )}
           {cloudUser && (
             <button
               onClick={onLogout}
@@ -409,6 +641,47 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
             >
               <LogOut size={13} /> Sign out
             </button>
+          )}
+          {cloudUser && (
+            <button
+              onClick={() => { setShowDeleteAccount(v => !v); setDeleteErr(''); setDeletePw(''); }}
+              className="w-full mb-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <UserX size={13} /> Delete account & cloud data
+            </button>
+          )}
+          {cloudUser && showDeleteAccount && (
+            <div className="p-2.5 mb-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50/60 dark:bg-red-950/30 space-y-2">
+              <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                Permanently deletes your account and every session stored in the
+                cloud. Your local Chrome data stays untouched. Type your
+                password to confirm.
+              </p>
+              <input
+                type="password"
+                value={deletePw}
+                onChange={(e) => setDeletePw(e.target.value)}
+                placeholder="Confirm password"
+                autoFocus
+                className="w-full px-2.5 py-1.5 rounded-md border border-borderLight bg-primary text-textMain text-sm focus:outline-none focus:ring-2 focus:ring-red-400/60"
+              />
+              {deleteErr && <p className="text-xs text-red-600 dark:text-red-400">{deleteErr}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowDeleteAccount(false); setDeletePw(''); setDeleteErr(''); }}
+                  className="flex-1 px-2 py-1.5 rounded-md text-xs font-medium text-textMuted bg-muted hover:bg-borderLight/60 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteBusy || !deletePw}
+                  className="flex-1 px-2 py-1.5 rounded-md text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {deleteBusy ? 'Deleting…' : 'Delete forever'}
+                </button>
+              </div>
+            </div>
           )}
           {!cloudUser && (
             <div className="grid grid-cols-2 gap-2">
@@ -510,13 +783,13 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-textMain">Theme</p>
-              <p className="text-xs text-textMuted">Switch between light, dark, or system</p>
+              <p className="text-xs text-textMuted">Switch between light and dark</p>
             </div>
             <button
               onClick={onCycleTheme}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-colors"
             >
-              {theme === 'dark' ? <><Moon size={14} /> Dark</> : theme === 'light' ? <><Sun size={14} /> Light</> : <><Laptop size={14} /> System</>}
+              {theme === 'dark' ? <><Moon size={14} /> Dark</> : <><Sun size={14} /> Light</>}
             </button>
           </div>
         </Section>
@@ -524,7 +797,12 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
         {/* ═══════════ ℹ️ ABOUT ═══════════ */}
         <Section icon={<Info size={16} />} title="About">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-textMain">Orbitabs v1.4.3</p>
+            {/* Version read from the live manifest (never hardcode — this line
+                drifted to v1.4.3 while the build shipped v1.5.0). Fallback only
+                for dev previews outside Chrome where chrome.runtime is absent. */}
+            <p className="text-sm font-medium text-textMain">
+              Orbitabs v{typeof chrome !== 'undefined' ? chrome.runtime?.getManifest?.()?.version || '1.5.0' : '1.5.0'}
+            </p>
             <p className="text-xs text-textMuted">
               Save and restore your browser sessions instantly.
               Works offline — no account required.
@@ -575,12 +853,14 @@ export default function Settings({ cloudUser, theme, onCycleTheme, onBack, onOpe
 function Header({ onBack }) {
   return (
     <div className="flex items-center gap-3 mb-5 relative z-10">
-      <button
-        onClick={onBack}
-        className="p-2 rounded-xl bg-white/80 hover:bg-white text-zinc-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-zinc-300 shadow-sm transition-colors"
-      >
-        <ArrowLeft size={18} />
-      </button>
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="p-2 rounded-xl bg-white/80 hover:bg-white text-zinc-700 dark:bg-secondary/80 dark:hover:bg-secondary dark:text-zinc-300 shadow-sm transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+      )}
       <h1 className="text-xl font-bold text-textMain tracking-tight">Settings</h1>
     </div>
   );
@@ -588,16 +868,26 @@ function Header({ onBack }) {
 
 // Reusable Section component — ONE card design for every section (spec §16),
 // with the reference's semantic accent per section (§20): General=identity
-// purple, Backup=blue, Privacy=warning yellow, everything else neutral.
+// purple, Backup=blue, Privacy=warning yellow — and the remaining sections
+// get hues from the same identity trio so the whole page reads as one set.
+// Every section wears `inner-glow-section` — the SAME inner-shadow recipe
+// as the session cards / organizer window cards (flat dark interior + the
+// section's own hue trapped inside a dark inner lip), so Settings reads like
+// the ui/ reference instead of a flat tinted panel.
 const SECTION_ACCENT = {
   General: 'purple',
   'Backup & Recovery': 'blue',
   'Privacy & Data': 'yellow',
+  'Account / Sync': 'pink',
+  'Keyboard Shortcuts': 'orange',
+  'Data Management': 'pink',
+  Appearance: 'blue',
+  About: 'orange',
 };
 function Section({ icon, title, children }) {
   const accent = SECTION_ACCENT[title] || '';
   return (
-    <div className={`surface ${accent ? `box-${accent}` : 'border-borderLight'} rounded-[14px] p-4 border shadow-sm`}>
+    <div className={`surface ${accent ? `box-${accent} inner-glow-section` : 'border-borderLight'} rounded-[14px] p-4 border shadow-sm`}>
       <div className="flex items-center gap-2 mb-3">
         <span className={accent ? '' : 'text-accentText'} style={accent ? { color: `rgb(var(--box-${accent}))` } : undefined}>{icon}</span>
         <h2 className="text-xs font-bold text-textMain uppercase tracking-wide">{title}</h2>
@@ -610,14 +900,14 @@ function Section({ icon, title, children }) {
 // Setting row: label + description on the left, control on the right.
 // The control column gets a max-width share so long dropdown labels can't
 // squeeze the title into a broken mid-word wrap.
-function Row({ title, desc, children }) {
+function Row({ title, desc, children, stacked = false }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
+    <div className={`flex ${stacked ? 'flex-col items-stretch' : 'items-center justify-between'} gap-2 py-2`}>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-textMain">{title}</p>
         {desc && <p className="text-[11px] text-textMuted leading-snug">{desc}</p>}
       </div>
-      <div className="flex-shrink-0 max-w-[55%]">{children}</div>
+      <div className={stacked ? 'w-full' : 'flex-shrink-0 max-w-[55%]'}>{children}</div>
     </div>
   );
 }
@@ -668,13 +958,21 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
     <div className="mt-3 pt-3 border-t border-zinc-100">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Recovery history</p>
-        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-accent hover:text-zinc-800 dark:hover:text-zinc-300 font-medium">
+        <button onClick={onRefresh} className="flex items-center gap-1 text-[11px] text-accentText hover:text-zinc-800 dark:hover:text-zinc-300 font-medium">
           <RefreshCw size={11} /> Refresh
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2 mb-2">
         <Stat label="Live tabs" value={diag.liveTabs} />
         <Stat label="Last save" value={diag.snapshotAgeSec != null ? `${diag.snapshotAgeSec}s ago` : 'Never'} />
+        <Stat label="Heartbeat" value={diag.heartbeatAgeSec != null ? `${diag.heartbeatAgeSec}s ago` : 'None'} />
+        <Stat label="Clean exit" value={diag.cleanExit} />
+        <Stat
+          label="Startup check"
+          value={diag.startupCheck
+            ? `${Math.max(0, Math.round((Date.now() - diag.startupCheck.at) / 60000))}m ago (${diag.startupCheck.phase})`
+            : 'Never'}
+        />
       </div>
       {diag.crashQueued && (
         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2 mb-2">
@@ -693,7 +991,7 @@ function RecoveryHistory({ diag, onRestore, onRefresh }) {
                 </span>
                 <button
                   onClick={() => onRestore(i)}
-                  className="text-xs text-accent hover:text-zinc-800 dark:hover:text-zinc-300 font-medium"
+                  className="text-xs text-accentText hover:text-zinc-800 dark:hover:text-zinc-300 font-medium"
                 >
                   Restore
                 </button>

@@ -41,6 +41,31 @@
 
 export const SCHEMA_VERSION = 1;
 
+/* ------------------------------------------------------------------ *
+ * V1.5 METADATA — organization only, never restorable state.
+ * Same sanitize rules live in tab-saver-backend/routes/sessions.js
+ * (normalizeToV1) — keep the two in sync so a tag added on device A
+ * survives the round-trip to device B unchanged.
+ * ------------------------------------------------------------------ */
+export const MAX_TAGS = 20;
+export const MAX_NOTE_LEN = 500;
+export const MAX_FOLDER_LEN = 50;
+
+/** Any input → a clean, unique, bounded string[] (max MAX_TAGS). */
+export function sanitizeTags(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const t of raw) {
+    if (typeof t !== 'string') continue;
+    const v = t.trim();
+    if (!v) continue;
+    if (out.includes(v)) continue; // exact-duplicate drop (case kept)
+    out.push(v.slice(0, 40)); // per-tag cap — chips must stay chips
+    if (out.length >= MAX_TAGS) break;
+  }
+  return out;
+}
+
 // The 9 colors Chrome's tabGroups API can return
 export const CHROME_COLORS = [
   'grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'
@@ -254,6 +279,12 @@ export function normalizeSession(raw) {
     name,
     schemaVersion: SCHEMA_VERSION,
     windows,
+    // 🆕 V1.5 metadata — absent on legacy docs → clean defaults
+    tags: sanitizeTags(raw.tags),
+    note: typeof raw.note === 'string' ? raw.note.slice(0, MAX_NOTE_LEN) : '',
+    folder: (typeof raw.folder === 'string' && raw.folder.trim())
+      ? raw.folder.trim().slice(0, MAX_FOLDER_LEN)
+      : null,
     isAutoSave: !!raw.isAutoSave,
     autoKey: raw.autoKey ?? null,
     deletedAt: safeIso(raw.deletedAt),

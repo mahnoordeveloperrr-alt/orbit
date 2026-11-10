@@ -8,7 +8,7 @@ import { X, Save } from 'lucide-react';
  */
 const KEY = 'orbi_welcomed';
 
-export default function WelcomeCard({ onQuickSave }) {
+export default function WelcomeCard({ onQuickSave, busy = false }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -51,10 +51,11 @@ export default function WelcomeCard({ onQuickSave }) {
       </p>
       <button
         onClick={handleSave}
-        className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-accent text-accentInk hover:bg-accentDark text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors"
+        disabled={busy}
+        className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-accent text-accentInk hover:bg-accentDark text-sm font-semibold px-3 py-2 rounded-[10px] transition-colors disabled:opacity-60 disabled:cursor-wait"
       >
         <Save size={14} />
-        Save My Current Tabs
+        {busy ? 'Saving�' : 'Save My Current Tabs'}
       </button>
       <p className="text-[11px] text-textMuted mt-2 leading-relaxed">
         Orbitabs stores your sessions locally by default. No account required.

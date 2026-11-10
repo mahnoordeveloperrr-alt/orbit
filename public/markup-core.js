@@ -1,7 +1,7 @@
 // 🖊 ORBITABS MARKUP — CORE (pure logic, zero DOM / zero chrome.*)
 // ------------------------------------------------------------------
 // The annotation engine behind the Markup overlay. Data-not-pixels:
-// every mark is a structured record (see MARKUP_SPEC.md §2) keyed by
+// every mark is a structured record (see docs/MARKUP_SPEC.md §2) keyed by
 // page URL, so annotations stay editable, undoable, and restorable
 // with the session — and the original website is NEVER modified.
 //
@@ -21,7 +21,7 @@
 (function (root) {
   'use strict';
 
-  const TOOLS = ['pen', 'highlight', 'rect', 'circle', 'arrow', 'text', 'sticky'];
+  const TOOLS = ['pen', 'highlight', 'rect', 'circle', 'arrow', 'text', 'sticky', 'triangle', 'star'];
   // Compact fill palette: yellow red green blue black white (+ the 🎨 picker
   // in the UI covers everything else). Storage keeps ANY valid hex, so older
   // marks with retired colors still render.
@@ -57,7 +57,9 @@
     }
   }
 
-  const isHexColor = (c) => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c);
+  // 6-digit hex, or 8-digit (#rrggbbaa) — the custom palette can set opacity
+  const isHexColor = (c) => typeof c === 'string' && /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(c);
+  const isFontName = (f) => typeof f === 'string' && f.length > 0 && f.length <= 40 && /^[\w ,'-]+$/.test(f);
   const isNum = (n) => typeof n === 'number' && Number.isFinite(n);
   const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
@@ -83,14 +85,24 @@
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!TOOLS.includes(raw.type)) return null;
 
-    const r = raw.rect || {};
-    if (!isNum(r.x) || !isNum(r.y)) return null;
-    const rect = {
-      x: clamp(Math.round(r.x), -1e6, 1e6),
-      y: clamp(Math.round(r.y), -1e6, 1e6),
-      w: isNum(r.w) ? clamp(Math.round(r.w), 0, 1e6) : 0,
-      h: isNum(r.h) ? clamp(Math.round(r.h), 0, 1e6) : 0
-    };
+  const r = raw.rect || {};
+  if (!isNum(r.x) || !isNum(r.y)) return null;
+  const rect = {
+    x: clamp(Math.round(r.x), -1e6, 1e6),
+    y: clamp(Math.round(r.y), -1e6, 1e6),
+    w: isNum(r.w) ? clamp(Math.round(r.w), -1e6, 1e6) : 0,
+    h: isNum(r.h) ? clamp(Math.round(r.h), -1e6, 1e6) : 0
+  };
+  // An ARROW's w/h are SIGNED — the sign IS its direction (an up-left drag
+  // points the arrow up-left). Every other mark normalizes to a positive
+  // box: which way you dragged must not change a shape's size, and the
+  // resize floor (MIN_W/MIN_H) assumes w/h ≥ 0.
+  if (raw.type !== 'arrow') {
+    if (rect.w < 0) { rect.x += rect.w; rect.w = -rect.w; }
+    if (rect.h < 0) { rect.y += rect.h; rect.h = -rect.h; }
+    rect.x = clamp(rect.x, -1e6, 1e6);
+    rect.y = clamp(rect.y, -1e6, 1e6);
+  }
 
     let points = null;
     if (raw.type === 'pen') {
@@ -128,7 +140,43 @@
       textSize: TEXT_SIZES.includes(raw.textSize) ? raw.textSize : 'M',
       createdAt: typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : new Date().toISOString()
     };
+    // v2 style fields (TEXT box / PEN TOOL box) — kept only when valid,
+    // omitted otherwise so old marks and garbage stay clean
+    if (isNum(raw.width) && raw.width >= 1 && raw.width <= 48) out.width = Math.round(raw.width);
+    if (isFontName(raw.font)) out.font = raw.font;
+    if (['left', 'center', 'right'].includes(raw.align)) out.align = raw.align;
+    if (raw.bold === true) out.bold = true;
+    if (raw.italic === true) out.italic = true;
+    if (raw.underline === true) out.underline = true;
+    if (['top', 'middle', 'bottom'].includes(raw.valign)) out.valign = raw.valign;
+    if (isNum(raw.size) && raw.size >= 6 && raw.size <= 72) out.size = Math.round(raw.size);
+    if (isNum(raw.leading) && raw.leading >= 1 && raw.leading <= 3) out.leading = Math.round(raw.leading * 100) / 100;
     if (shape) out.shape = shape;
+    // SCROLL-ANCHOR: which scrollable ancestors this mark was drawn inside
+    // (+ their scroll offsets at creation — overlay captureAnchor). Only the
+    // NUMERIC snapshot is trusted from storage; live element refs (`els`) are
+    // runtime-only, re-attached by the overlay after every commit.
+    const cleanScrollArr = (arr) => Array.isArray(arr) && arr.length <= 8 && arr.every(isNum);
+    if (raw.anchor && typeof raw.anchor === 'object' &&
+        cleanScrollArr(raw.anchor.sx) && cleanScrollArr(raw.anchor.sy) &&
+        raw.anchor.sx.length === raw.anchor.sy.length) {
+      out.anchor = { sx: raw.anchor.sx.map((v) => Math.round(v)),
+                     sy: raw.anchor.sy.map((v) => Math.round(v)) };
+      // Persistent PATH descriptors (tag + nth-of-type index + optional id
+      // hint, innermost-first like sx/sy): the overlay re-resolves the
+      // scroller chain from these after a reload — container anchoring
+      // survives F5, not just live scrolling. Runtime `els` element refs
+      // can never be stored; path is the durable half of the anchor.
+      const cleanPath = (arr) => Array.isArray(arr) && arr.length > 0 && arr.length <= 8 &&
+        arr.every((e) => e && typeof e.t === 'string' && /^[A-Z][A-Z0-9-]*$/.test(e.t) &&
+          Number.isInteger(e.i) && e.i >= 0 && e.i < 1000);
+      if (cleanPath(raw.anchor.path)) {
+        out.anchor.path = raw.anchor.path.map((e) => ({
+          t: e.t, i: e.i,
+          id: typeof e.id === 'string' && e.id.length > 0 && e.id.length <= 100 ? e.id : undefined
+        }));
+      }
+    }
     return out;
   }
 
@@ -157,20 +205,150 @@
     return { doc: next, added: true };
   }
 
-  /** Eraser: remove EVERY mark within radius r of (x, y), using the shared
-   *  hit geometry. Returns { doc, removed: Annotation[] } — the removed marks
-   *  themselves, so the caller can undo/restore them verbatim. Immutable. */
-  function eraseAt(doc, x, y, radius) {
+  /* ── RUB-OUT ERASER internals ────────────────────────────────────────────
+     A real eraser takes only what it touches, so strokes are CLIPPED instead
+     of deleted: the eraser's square (the same box hitsMark tests) is cut out
+     of the polyline, surviving parts stay, and a nick in the middle splits
+     the stroke into two. Liang-Barsky gives each segment's inside interval
+     [t0, t1]; everything outside it is kept, with the exact crossing points
+     inserted so the gap is clean at the nib's edge. */
+  function clipPenRuns(points, x, y, R) {
+    const bx1 = x - R, bx2 = x + R, by1 = y - R, by2 = y + R;
+    const lerp = (a, b, t) => [Math.round(a[0] + (b[0] - a[0]) * t),
+                               Math.round(a[1] + (b[1] - a[1]) * t)];
+    // inside-interval of segment A→B, or null when the box never touches it
+    const insideT = (A, B) => {
+      let t0 = 0, t1 = 1;
+      const dx = B[0] - A[0], dy = B[1] - A[1];
+      const p = [-dx, dx, -dy, dy];
+      const q = [A[0] - bx1, bx2 - A[0], A[1] - by1, by2 - A[1]];
+      for (let i = 0; i < 4; i++) {
+        if (p[i] === 0) { if (q[i] < 0) return null; }
+        else {
+          const r = q[i] / p[i];
+          if (p[i] < 0) { if (r > t1) return null; if (r > t0) t0 = r; }
+          else { if (r < t0) return null; if (r < t1) t1 = r; }
+        }
+      }
+      // a zero-width interval = the line only GRAZES the rim → not an erase
+      return t1 - t0 > 1e-9 ? [t0, t1] : null;
+    };
+    const runs = [];
+    let cur = null;
+    let touched = false; // did the nib actually intersect this stroke?
+    for (let i = 0; i < points.length - 1; i++) {
+      const A = points[i], B = points[i + 1];
+      const iv = insideT(A, B);
+      if (!iv) { // segment stays clear of the box — it continues the run
+        if (cur) cur.push(B); else cur = [A, B];
+        continue;
+      }
+      touched = true;
+      const [s, e] = iv;
+      if (s > 0) { // head of the segment lies OUTSIDE — close it as a run
+        const pIn = lerp(A, B, s);
+        if (cur) cur.push(pIn); else cur = [A, pIn];
+        if (cur.length >= 2) runs.push(cur);
+        cur = null;
+      }
+      if (e < 1) { // tail lies OUTSIDE — a fresh run starts at the exit
+        const pOut = lerp(A, B, e);
+        cur = [pOut];
+        if (pOut[0] !== B[0] || pOut[1] !== B[1]) cur.push(B);
+      } else {
+        cur = null; // the rest of this segment is inside (or exits at B)
+      }
+    }
+    if (cur && cur.length >= 2) runs.push(cur);
+    return { touched, runs: runs.filter((r) => r.length >= 2) };
+  }
+
+  /** Highlight rub-out: bands are rectangles, so the round nib becomes a
+   *  straight GAP cut across the band's LONG axis (the same approximation
+   *  every marker-eraser uses). Returns the surviving pieces, or null when a
+   *  cut would leave dust stubs / spans the whole band — the caller then
+   *  deletes the band outright. */
+  function cutHighlight(rect, x, y, R) {
+    const x1 = Math.min(rect.x, rect.x + rect.w), x2 = Math.max(rect.x, rect.x + rect.w);
+    const y1 = Math.min(rect.y, rect.y + rect.h), y2 = Math.max(rect.y, rect.y + rect.h);
+    const horiz = x2 - x1 >= y2 - y1;
+    const lo0 = horiz ? x1 : y1, hi0 = horiz ? x2 : y2;
+    const lo = (horiz ? x : y) - R, hi = (horiz ? x : y) + R;
+    if (lo <= lo0 && hi >= hi0) return null; // nib spans the band → whole delete
+    const GAP = 2, MIN = 6; // clean margin around the cut · no dust pieces
+    const pieces = [];
+    const push = (from, to) => {
+      if (to - from < MIN) return;
+      pieces.push(horiz
+        ? { x: from, y: y1, w: to - from, h: y2 - y1 }
+        : { x: x1, y: from, w: x2 - x1, h: to - from });
+    };
+    push(lo0, Math.min(hi0, lo - GAP));
+    push(Math.max(lo0, hi + GAP), hi0);
+    return pieces.length ? pieces : null;
+  }
+
+  /** Eraser: RUB-OUT semantics — only what the nib touches goes.
+   *  · pen strokes are clipped against the eraser box: untouched parts
+   *    survive, a middle nick SPLITS the stroke in two, a rubbed end just
+   *    shortens it (the stroke is never deleted whole).
+   *  · highlight bands get a gap cut along their long axis.
+   *  · every other mark is one solid object — contact removes it entirely.
+   *  Returns { doc, removed } — removed[] carries EVERY annotation the eraser
+   *  took (the original stroke/band even when a piece survives), so callers
+   *  can restore verbatim. Immutable.
+   *
+   *  `offsetOf(a)` (optional) returns {dx,dy} — how far THIS mark's own
+   *  scroll containers have moved since it was drawn. The nib point is
+   *  converted into each mark's space before testing, so a note inside a
+   *  scrolled div is erased exactly where it renders (overlay anchorDelta).
+   *  No offsetOf → classic shared-space behaviour. */
+  function eraseAt(doc, x, y, radius, offsetOf) {
     if (!doc || !Array.isArray(doc.annotations)) return { doc, removed: [] };
     if (!isNum(x) || !isNum(y)) return { doc, removed: [] };
     const R = isNum(radius) && radius > 0 ? radius : ERASER.RADIUS;
     const removed = [];
-    const annotations = doc.annotations.filter((a) => {
-      if (!a) return false;
-      const hit = hitsMark(a, x, y, R);
-      if (hit) removed.push(a);
-      return !hit;
+    let annotations = [];
+    doc.annotations.forEach((a) => {
+      if (!a) return;
+      // per-mark space: the pointer position expressed where THIS mark lives
+      let ax = x, ay = y;
+      if (typeof offsetOf === 'function') {
+        const d = offsetOf(a);
+        if (d && isNum(d.dx) && isNum(d.dy)) { ax = x + d.dx; ay = y + d.dy; }
+      }
+
+      if (a.type === 'pen' && Array.isArray(a.points)) {
+        const { touched, runs } = clipPenRuns(a.points, ax, ay, R);
+        if (!touched) { annotations.push(a); return; } // nib missed the stroke
+        removed.push(a);
+        // first piece keeps the id (selection survives); splits get fresh ids
+        runs.forEach((pts, i) => annotations.push({ ...a, id: i === 0 ? a.id : genId(), points: pts }));
+        return;
+      }
+
+      if (a.type === 'highlight') {
+        if (hitsMark(a, ax, ay, R)) {
+          const pieces = cutHighlight(a.rect || {}, ax, ay, R);
+          if (pieces) {
+            removed.push(a);
+            pieces.forEach((rect, i) => annotations.push({ ...a, id: i === 0 ? a.id : genId(), rect }));
+            return;
+          }
+          // unrepresentable cut → whole delete below
+        } else {
+          annotations.push(a);
+          return;
+        }
+      } else if (!hitsMark(a, ax, ay, R)) {
+        annotations.push(a);
+        return;
+      }
+
+      removed.push(a); // solid mark, hit → removed whole (contact delete)
     });
+    // splits can grow the list a little — same cap rule as addAnnotation
+    if (annotations.length > MAX_PER_URL) annotations = annotations.slice(annotations.length - MAX_PER_URL);
     return { doc: { ...doc, annotations }, removed };
   }
 
@@ -295,6 +473,56 @@
     return { doc: { ...doc, annotations }, updated };
   }
 
+  /** Set TEXT style fields (font family, size, alignment, vertical align,
+   *  line spacing, bold/italic/underline) on one mark — the TEXT box uses it
+   *  for live edits and defaults.
+   *  font/align/valign/size/leading: null clears to the default;
+   *  booleans: false removes. Returns { doc, updated }. Immutable. */
+  function setAnnotationStyle(doc, id, patch) {
+    if (!doc || !Array.isArray(doc.annotations) || !patch || typeof patch !== 'object') return { doc, updated: false };
+    const next = {};
+    if ('font' in patch) {
+      if (patch.font !== null && !isFontName(patch.font)) return { doc, updated: false };
+      next.font = patch.font || null;
+    }
+    if ('align' in patch) {
+      if (patch.align !== null && !['left', 'center', 'right'].includes(patch.align)) return { doc, updated: false };
+      next.align = patch.align || null;
+    }
+    if ('bold' in patch) next.bold = patch.bold === true;
+    if ('italic' in patch) next.italic = patch.italic === true;
+    if ('underline' in patch) next.underline = patch.underline === true;
+    if ('valign' in patch) {
+      if (patch.valign !== null && !['top', 'middle', 'bottom'].includes(patch.valign)) return { doc, updated: false };
+      next.valign = patch.valign || null;
+    }
+    if ('size' in patch) {
+      if (patch.size !== null && !(typeof patch.size === 'number' && Number.isFinite(patch.size) && patch.size >= 6 && patch.size <= 72)) return { doc, updated: false };
+      next.size = patch.size ? Math.round(patch.size) : null;
+    }
+    if ('leading' in patch) {
+      if (patch.leading !== null && !(typeof patch.leading === 'number' && Number.isFinite(patch.leading) && patch.leading >= 1 && patch.leading <= 3)) return { doc, updated: false };
+      next.leading = patch.leading || null;
+    }
+    if (!Object.keys(next).length) return { doc, updated: false };
+    let updated = false;
+    const annotations = doc.annotations.map((a) => {
+      if (!a || a.id !== id) return a;
+      updated = true;
+      const m = { ...a, ...next };
+      if (!m.font) delete m.font;
+      if (!m.align) delete m.align;
+      if (!m.bold) delete m.bold;
+      if (!m.italic) delete m.italic;
+      if (!m.underline) delete m.underline;
+      if (!m.valign) delete m.valign;
+      if (!m.size) delete m.size;
+      if (!m.leading) delete m.leading;
+      return m;
+    });
+    return { doc: { ...doc, annotations }, updated };
+  }
+
   /** Clear every mark on the page. */
   function clearAnnotations(doc) {
     if (!doc) return emptyDoc(doc && doc.url);
@@ -304,10 +532,11 @@
   root.OrbitabsMarkup = {
     TOOLS, COLORS, INK_COLORS, SHAPES, ERASER, MAX_PER_URL, MAX_TEXT_LEN, MIN_W, MIN_H,
     TEXT_SIZES, TEXT_SIZE_PX,
-    normalizeUrlKey, sanitizeAnnotation, genId,
+    normalizeUrlKey, sanitizeAnnotation, genId, hitsMark,
     emptyDoc, addAnnotation, eraseAt,
     moveAnnotation, resizeAnnotation, setAnnotationShape,
     setAnnotationText, setAnnotationColor, setAnnotationTextColor, setAnnotationTextSize,
+    setAnnotationStyle,
     clearAnnotations
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

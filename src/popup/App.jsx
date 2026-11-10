@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
-// 🆕 Mirror the auth token into chrome.storage.local — the background service
-// worker CANNOT read the popup's localStorage, but it needs the token for the
-// optional cloud sync of the live backup.
+// 🆕 Mirror the auth token PAIR into chrome.storage.local — the background
+// service worker CANNOT read the popup's localStorage, but it needs both the
+// token and the refresh token (sliding session) for cloud sync.
 const mirrorToken = (token) => {
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-    if (token) chrome.storage.local.set({ token });
-    else chrome.storage.local.remove('token');
+    const rt = localStorage.getItem('refreshToken');
+    if (token) chrome.storage.local.set(rt ? { token, refreshToken: rt } : { token });
+    else chrome.storage.local.remove(['token', 'refreshToken']);
   }
 };
 
-// theme (light/dark/system) lives in ./hooks/useTheme — shared, not exported
+// theme (light/dark only — system mode removed) lives in ./hooks/useTheme — shared, not exported
 // from this component file.
 import useTheme from './hooks/useTheme';
 
@@ -34,13 +35,20 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     mirrorToken(null);
     setCloudUser(null);
     setView('dashboard'); // sign-out never kicks you out of the app
   };
 
   return (
-    <div className="w-[420px] h-[640px] rounded-2xl border border-borderLight/60 overflow-hidden bg-primary">
+    /* w-full/h-full: the shell MUST track #root's fixed 420×560 box
+       (index.html). A hardcoded height LARGER than the root (this used to be
+       h-[640px]) got sliced off by the root's overflow:hidden — the bottom
+       ~80px of the popup (Trash, end of the list) was unreachable because
+       neither layer scrolls. The shell follows the root; the pages inside
+       own their own scrolling. */
+    <div className="w-full h-full rounded-2xl border border-borderLight/60 overflow-hidden bg-primary">
       {/* rounded shell; the PAGE paints the theme (index.css base layer —
           blue gradient + glow), and it stays visible through the shell so
           glass cards have something luminous behind their blur. No opaque

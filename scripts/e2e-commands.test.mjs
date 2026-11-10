@@ -5,9 +5,15 @@
 // The REAL worker runs in a Node VM with the faithful chrome.* mock extended
 // with a chrome.commands event sink. Covers:
 //   1. quick-save  → named session appears in orbi_sessions, newest-first
-//   2. restore-last → reopens the newest non-deleted session (structure check)
+//   2. restore-last → reopens the newest non-deleted MANUAL session (structure
+//                     check) + green ✓ badge feedback + auto-clear
 //   3. trash hygiene → trashed sessions are never restored
-//   4. missing-command → restore-last is a silent no-op
+//   3b. Live Backup shadowing → auto-save doc (newest by createdAt) must NOT
+//                     win while a manual session exists — the 30s heartbeat
+//                     re-stamps it, which used to make the hotkey look dead
+//   3c. Live Backup fallback → restored when it is the ONLY session
+//   3d. legacy pre-v1 doc ({urls[], groups[].urlIndices}) restores inline
+//   4. missing-command → restore-last is a silent no-op (no windows, no badge)
 //   5. QUICK_SAVE message → same path as the keyboard command
 // ============================================================================
 
@@ -234,6 +240,10 @@ const workId = rw1.tabs.find(t => t.url === 'https://github.com').groupId;
 check('Work group rebuilt (blue, membership by id)', mock.state.groupMeta.get(workId)?.title === 'Work' && mock.state.groupMeta.get(workId)?.color === 'blue');
 check('Research group rebuilt (collapsed)', [...mock.state.groupMeta.values()].some(m => m.title === 'Research' && m.collapsed === true));
 check('focused window = saved focused (W1)', live.find(w => w.focused) === rw1);
+check('restore pulses green ✓ badge (feedback parity with quick-save)',
+  mock.state.badge === '✓' && mock.state.badgeColor === '#16a34a');
+await sleep(1300);
+check('restore badge auto-clears', mock.state.badge === '');
 void resp;
 
 /* ------------------------------------------------------------------ *
@@ -252,6 +262,65 @@ mock.state.groupMeta.clear();
 await pressCommand(mock, 'restore-last');
 check('trashed session skipped', !mock.state.windows.some(w => w.tabs.some(t => t.url.includes('docs.example'))));
 check('newest NON-deleted session chosen (newer, not older)', mock.state.windows.some(w => w.tabs.some(t => t.url === 'https://newer.example.com')));
+await sleep(1300); // clear this restore's ✓ pulse before the next scenario's badge asserts
+
+/* ------------------------------------------------------------------ *
+ * 3b. Live Backup shadowing — the auto-save doc is ALWAYS the newest
+ *     (heartbeat re-stamps createdAt every ~30s); it must never win
+ *     while the user has a real saved session.
+ * ------------------------------------------------------------------ */
+console.log('\n── 3b. Live Backup must not shadow restore-last ──');
+const liveBackupDoc = {
+  _id: 'local-auto', name: 'Auto-save — Live Backup',
+  isAutoSave: true, autoKey: 'live-backup', deletedAt: null,
+  createdAt: new Date(Date.now() + 60000).toISOString(), // heartbeat-fresh = NEWEST
+  windows: [{ state: 'normal', focused: true, tabs: [{ url: 'https://live-backup.example.com', title: 'LB', pinned: false, active: true, groupId: null }], groups: [] }]
+};
+mock.state.local.orbi_sessions = [liveBackupDoc, newer, older]; // LB newest by createdAt
+mock.state.windows = [];
+mock.state.groupMeta.clear();
+await pressCommand(mock, 'restore-last');
+check('manual session wins over a newer Live Backup (shadowing bug)',
+  mock.state.windows.some(w => w.tabs.some(t => t.url === 'https://newer.example.com')));
+check('Live Backup NOT restored while a manual session exists',
+  !mock.state.windows.some(w => w.tabs.some(t => t.url === 'https://live-backup.example.com')));
+await sleep(1300);
+
+/* ------------------------------------------------------------------ *
+ * 3c. Live Backup fallback — with NO manual session, the hotkey must
+ *     still do something (never a dead key for auto-save-only users).
+ * ------------------------------------------------------------------ */
+console.log('\n── 3c. Live Backup as the only session (fallback) ──');
+mock.state.local.orbi_sessions = [liveBackupDoc];
+mock.state.windows = [];
+mock.state.groupMeta.clear();
+await pressCommand(mock, 'restore-last');
+check('Live Backup restored when it is the ONLY session',
+  mock.state.windows.some(w => w.tabs.some(t => t.url === 'https://live-backup.example.com')));
+await sleep(1300);
+
+/* ------------------------------------------------------------------ *
+ * 3d. legacy pre-v1 doc — the hotkey reads raw storage (no popup lazy
+ *     upgrade), so {urls[], groups[].urlIndices} must convert inline.
+ * ------------------------------------------------------------------ */
+console.log('\n── 3d. legacy {urls[]} doc restores inline ──');
+const legacyDoc = {
+  _id: 'legacy-1', name: 'Old save',
+  createdAt: new Date(Date.now() - 30000).toISOString(),
+  deletedAt: null, isAutoSave: false,
+  urls: ['https://legacy.example.com/a', 'https://legacy.example.com/b'],
+  groups: [{ title: 'OldGroup', color: 'blue', collapsed: false, urlIndices: [1] }]
+};
+mock.state.local.orbi_sessions = [legacyDoc];
+mock.state.windows = [];
+mock.state.groupMeta.clear();
+await pressCommand(mock, 'restore-last');
+check('legacy urls[] doc restores as ONE window with both tabs',
+  mock.state.windows.length === 1 && mock.state.windows[0].tabs.length === 2,
+  JSON.stringify(mock.state.windows.map(w => w.tabs.map(t => t.url))));
+check('legacy group rebuilt from urlIndices (membership by id)',
+  [...mock.state.groupMeta.values()].some(m => m.title === 'OldGroup' && m.color === 'blue'));
+await sleep(1300);
 
 /* ------------------------------------------------------------------ *
  * 4. missing command → silent no-op
@@ -262,6 +331,7 @@ mock.state.groupMeta.clear();
 mock.state.local.orbi_sessions = []; // empty store
 await pressCommand(mock, 'restore-last');
 check('empty store → no windows opened, no crash', mock.state.windows.length === 0);
+check('empty store → no badge either (stays silent)', mock.state.badge === '');
 
 /* ------------------------------------------------------------------ *
  * 5. QUICK_SAVE message (popup path shares the worker logic)

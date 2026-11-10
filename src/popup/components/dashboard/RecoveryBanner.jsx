@@ -49,10 +49,21 @@ export default function RecoveryBanner() {
   };
 
   return (
-    <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 relative z-10 flex items-center justify-between gap-2">
-      <div className="flex flex-col flex-shrink-0">
-        <span className="text-amber-600 dark:text-amber-400 text-sm font-medium flex items-center gap-1">
-          <RotateCcw size={16} /> Chrome crashed — restore {recovery.count} tabs?
+    /* ui/ reference "crash" strip — the SAME trapped inner-shadow recipe the
+       session cards and Settings sections wear, in this banner's semantic
+       colour: yellow/gold = recovery (boxColors.js §20). `.box-yellow`
+       publishes --card-hue (glow yellow); `.inner-glow-section` supplies the
+       flat #18181c interior (dark in BOTH modes) + hue glow ×2 + dark lip.
+       Tests pin the strings "Chrome crashed" and "Not now" — keep them. */
+    <div className="w-full box-yellow inner-glow-section rounded-xl p-3 mb-3 relative z-10 flex items-center justify-between gap-2">
+      {/* LEFT must be allowed to shrink (default flex-shrink:1 + min-w-0) so
+          the long title wraps instead of pushing the banner wider than the
+          popup — both columns shrink-0 measured 438px of content in a 379px
+          card (horizontal overflow). Buttons on the right stay flex-shrink-0. */}
+      <div className="flex flex-col min-w-0">
+        <span className="text-textMain text-sm font-semibold flex items-center gap-1.5">
+          <RotateCcw size={15} className="text-[rgb(var(--box-yellow))] flex-shrink-0" />
+          Chrome crashed — restore {recovery.count} tabs?
         </span>
         {recovery.savedAt && (
           <span className="text-textMuted text-xs flex items-center gap-1 mt-0.5">
@@ -60,7 +71,7 @@ export default function RecoveryBanner() {
           </span>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={handleDismiss}
           className="text-textMuted hover:text-textMain text-xs font-medium underline underline-offset-2"
@@ -70,7 +81,12 @@ export default function RecoveryBanner() {
         <button
           onClick={handleRestore}
           title="Reopen the tabs that were open before the crash"
-          className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-[10px] text-xs font-semibold transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-[10px] text-xs font-semibold transition-all hover:brightness-90"
+          style={{
+            backgroundColor: 'rgb(var(--box-yellow))',
+            color: 'rgb(var(--c-accent-ink))', /* dark ink on the gold fill — session-card convention */
+            boxShadow: 'inset 0 0 15px rgba(0, 0, 0, 0.25)',
+          }}
         >
           <RotateCcw size={13} /> Restore tabs
         </button>

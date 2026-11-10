@@ -1,0 +1,33 @@
+# Orbitabs Cloud API — local dev + deploy config
+# `wrangler dev` runs the same workerd runtime the Cloudflare platform runs,
+# with a LOCAL D1 database (miniflare) — the exact pre-deploy gate.
+name = "orbitabs-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# D1 binding — the worker reads env.DB. On the hosting platform the binding
+# is attached when the D1 database is provisioned for the site (same name).
+[[d1_databases]]
+binding = "DB"
+database_name = "orbitabs"
+database_id = "00000000-0000-0000-0000-000000000000" # placeholder for local dev
+
+[vars]
+# ALLOWED_ORIGINS = ""        # comma-separated web origins (chrome-extension:// always allowed)
+# APP_BASE_URL = ""           # public origin for verify/reset links; for SHARE links set it to
+#                               # the dashboard host (the privacy site origin, e.g.
+#                               # https://site-512379db08964aeab89fedca50bcc8cf.freebuff.page)
+#                               # so minted links open the claim page
+# EMAIL_FROM = "Orbitabs <onboarding@resend.dev>"
+# FREE_SESSION_LIMIT = "100"  # free-plan sync cap; "-1" disables
+# BILLING_PORTAL_URL = ""     # Lemon Squeezy customer portal link (shown on the Upgrade card)
+
+# Local dev secret (wrangler dev reads .dev.vars):
+#   JWT_SECRET = "dev-only-secret"
+#   LEMONSQUEEZY_API_KEY = ""        # lsapi_… — /api/billing/checkout
+#   LEMONSQUEEZY_STORE_ID = ""
+#   LEMONSQUEEZY_VARIANT_ID = ""     # the Pro subscription variant
+#   LEMONSQUEEZY_WEBHOOK_SECRET = "" # HMAC key for x-paddle/x-signature verify
+# Production: set as platform secrets (never committed). Without them billing
+# answers an honest 503 and NOTHING about plans changes — the webhook is the
+# only thing that can ever set plan='pro'.

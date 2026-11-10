@@ -18,7 +18,14 @@ scripts/markup-harness.html
 # 🆕 SECURITY: never commit secrets or environment files
 .env
 .env.*
+.dev.vars
+*.dev.vars
+.jwt-secret
+.jwt-secret.*
 !.env.example
+
+# Wrangler local build output
+.wrangler/
 *.pem
 *.key
 *.p12
@@ -39,3 +46,7 @@ important*.txt
 
 # Codebuff workspace state
 .freebuff/
+.chrome-test-profile/
+
+# Real-Chrome E2E scratch profile (scripts/chrome-live-e2e.mjs)
+.chrome-e2e-profile/

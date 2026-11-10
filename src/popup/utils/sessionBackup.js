@@ -48,6 +48,10 @@ export function buildBackupPayload(sessions) {
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
       pinned: !!s.pinned, // 📌 survives export → import
+      // 🆕 V1.5 metadata survives the round-trip too
+      tags: s.tags || [],
+      note: s.note || '',
+      folder: s.folder || null,
       // v1 windows[] — the ONLY restorable shape (locked schema)
       windows: s.windows
     }))

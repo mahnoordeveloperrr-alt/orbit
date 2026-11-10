@@ -13,7 +13,7 @@
 // so the UI behaves identically online/offline. Responses are axios-shaped
 // ({ data }) so components can swap api.js <-> store.js with one import change.
 
-import { normalizeSession, SCHEMA_VERSION } from './sessionSchema';
+import { normalizeSession, SCHEMA_VERSION, sanitizeTags, MAX_NOTE_LEN, MAX_FOLDER_LEN } from './sessionSchema';
 
 const STORAGE_KEY = 'orbi_sessions'; // keep in sync with public/background.js
 const SETTINGS_KEY = 'orbi_settings'; // 🆕 user-controlled behavior flags
@@ -37,11 +37,20 @@ const DEFAULT_SETTINGS = {
   // 🔐 Privacy & Data
   localOnly: false,        // hard-off switch for ALL network calls
   cloudSync: false,        // optional cloud sync (needs account + !localOnly)
+  apiBaseUrl: '',          // Server URL override ('' = built-in default origin)
 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const hasChromeStorage = () =>
   typeof chrome !== 'undefined' && chrome.storage?.local;
+
+const SESSION_LOCK = 'orbitabs-sessions';
+async function withSessionsLock(work) {
+  const locks = globalThis.navigator?.locks;
+  return locks?.request
+    ? locks.request(SESSION_LOCK, { mode: 'exclusive' }, work)
+    : work();
+}
 
 const genId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -62,9 +71,29 @@ async function readAll() {
 
 async function writeAll(sessions) {
   if (hasChromeStorage()) {
-    await chrome.storage.local.set({ [STORAGE_KEY]: sessions });
+    try {
+      await chrome.storage.local.set({ [STORAGE_KEY]: sessions });
+    } catch (e) {
+      // 💾 Quota / disk-full must produce an HONEST, actionable error — not a
+      //    silent no-op and not a raw Chrome message. Callers (Dashboard
+      //    save, import) surface this text in their toast.
+      const quota = /quota|QUOTA_BYTES|storage/i.test(String(e?.message || e));
+      const err = new Error(quota
+        ? 'Browser storage is full — export your data (Settings → Export), then delete old sessions to free space.'
+        : `Could not write to browser storage: ${e?.message || e}`);
+      err.cause = e;
+      err.quota = quota;
+      throw err;
+    }
   } else {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    } catch (e) {
+      const err = new Error('Browser storage is full — export your data (Settings → Export), then delete old sessions to free space.');
+      err.cause = e;
+      err.quota = true;
+      throw err;
+    }
   }
 }
 
@@ -77,13 +106,16 @@ async function trashRetentionMs() {
 }
 
 /** Drop trash items older than the retention window (auto-purge on read). */
-async function purgeExpiredTrash(sessions) {
+async function purgeExpiredTrash() {
+  return withSessionsLock(async () => {
+  const sessions = await readAll();
   const retention = await trashRetentionMs();
   const expired = (s) => s.deletedAt && new Date(s.deletedAt).getTime() < Date.now() - retention;
   if (!sessions.some(expired)) return sessions;
   const kept = sessions.filter(s => !expired(s));
   await writeAll(kept);
   return kept;
+  });
 }
 
 const byNewest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
@@ -96,25 +128,28 @@ const byPinnedThenNewest = (a, b) => (!!b.pinned - !!a.pinned) || byNewest(a, b)
  * Lazy upgrade: rewrite a doc in v1 when we touch it. Keeps the store
  * clean over time without a one-time migration pass.
  */
-async function upgradeDoc(raw, sessions) {
-  const norm = normalizeSession(raw);
-  if (!norm) return false;
-  if (raw.schemaVersion === SCHEMA_VERSION && raw.windows) return false; // already v1
-  const idx = sessions.findIndex(s => (s._id || s.id) === (raw._id || raw.id));
-  if (idx >= 0) {
-    sessions[idx] = { ...norm, _id: raw._id || raw.id || norm._id };
+async function upgradeDoc(raw) {
+  return withSessionsLock(async () => {
+    const sessions = await readAll();
+    const idx = sessions.findIndex(s => (s._id || s.id) === (raw._id || raw.id));
+    if (idx < 0) return false;
+    const latest = sessions[idx];
+    if (latest.schemaVersion === SCHEMA_VERSION && latest.windows) return false;
+    const norm = normalizeSession(latest);
+    if (!norm) return false;
+    sessions[idx] = { ...norm, _id: latest._id || latest.id || norm._id };
     await writeAll(sessions);
-  }
-  return true;
+    return true;
+  });
 }
 
 /* ---------------- public API (axios-shaped) ---------------- */
 
 export async function getSessions() {
-  const sessions = await purgeExpiredTrash(await readAll());
+  const sessions = await purgeExpiredTrash();
   const live = [];
   for (const raw of sessions.filter(s => !s.deletedAt).sort(byPinnedThenNewest)) {
-    await upgradeDoc(raw, sessions); // lazy legacy → v1
+    await upgradeDoc(raw); // lazy legacy → v1
     const norm = normalizeSession(raw);
     if (norm) live.push(norm);
   }
@@ -127,6 +162,7 @@ export async function getSessions() {
  * normalized defensively, but new code must pass `windows`.
  */
 export async function createSession({ name, windows }) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const now = new Date().toISOString();
   const norm = normalizeSession({ name, windows, createdAt: now });
@@ -142,10 +178,13 @@ export async function createSession({ name, windows }) {
   };
   await writeAll([doc, ...sessions]);
   return { data: doc };
+
+  });
 }
 
 /** Upsert the auto-save Live Backup (called by background.js every heartbeat). */
 export async function upsertAutoSaveSession({ name, windows }) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const now = new Date().toISOString();
   const idx = sessions.findIndex(s => s.isAutoSave && s.autoKey === 'live-backup');
@@ -172,10 +211,13 @@ export async function upsertAutoSaveSession({ name, windows }) {
   }
   await writeAll(sessions);
   return { data: sessions[idx >= 0 ? idx : 0] };
+
+  });
 }
 
 /** Soft delete → trash (undoable for 30 days). */
 export async function deleteSession(id) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const target = sessions.find(s => s._id === id);
   if (target) {
@@ -183,6 +225,8 @@ export async function deleteSession(id) {
     await writeAll(sessions);
   }
   return { data: { message: 'Session deleted (undoable)' } };
+
+  });
 }
 
 export async function getTrash() {
@@ -195,45 +239,63 @@ export async function getTrash() {
   return { data: trashed };
 }
 
-/** Undo single delete. */
+/** Undo single delete — restore is a WRITE: it bumps updatedAt so sync's
+ *  last-write-wins treats "I restored it" as a newer statement than the
+ *  tombstone a server may still hold (propagates the restore to every
+ *  device instead of the local copy being re-trashed on the next pull). */
 export async function restoreSession(id) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const target = sessions.find(s => s._id === id);
   if (target) {
     target.deletedAt = null;
+    target.updatedAt = new Date().toISOString();
     await writeAll(sessions);
   }
   return { data: target || null };
+
+  });
 }
 
-/** Undo bulk delete. */
+/** Undo bulk delete — same write-stamp rule as restoreSession. */
 export async function restoreBulkSessions(ids) {
+  return withSessionsLock(async () => {
   const idSet = new Set(ids || []);
   const sessions = await readAll();
+  const now = new Date().toISOString();
   let count = 0;
   sessions.forEach(s => {
     if (idSet.has(s._id) && s.deletedAt) {
       s.deletedAt = null;
+      s.updatedAt = now;
       count++;
     }
   });
   await writeAll(sessions);
   return { data: { message: `${count} sessions restored.`, restoredCount: count } };
+
+  });
 }
 
 /** Permanently remove one trashed session (no undo). */
 export async function purgeSession(id) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   await writeAll(sessions.filter(s => !(s._id === id && s.deletedAt)));
   return { data: { message: 'Session permanently deleted' } };
+
+  });
 }
 
 /** Permanently empty the trash (no undo). */
 export async function emptyTrash() {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const kept = sessions.filter(s => !s.deletedAt);
   await writeAll(kept);
   return { data: { message: `${sessions.length - kept.length} sessions permanently deleted.` } };
+
+  });
 }
 
 /* ---------------- settings (user control — Task 14) ---------------- */
@@ -281,6 +343,7 @@ export async function setSetting(patch) {
 /** 📌 Pin/unpin a session: pinned sessions sort above everything else in the
  *  list (the auto-save Live Backup still leads). Reversible, never destructive. */
 export async function setSessionPinned(id, pinned) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const target = sessions.find(s => s._id === id);
   if (!target) return { data: null, error: 'not-found' };
@@ -288,10 +351,13 @@ export async function setSessionPinned(id, pinned) {
   target.updatedAt = new Date().toISOString();
   await writeAll(sessions);
   return { data: target };
+
+  });
 }
 
 /** Rename a session (empty/whitespace name keeps the old one). */
 export async function renameSession(id, name) {
+  return withSessionsLock(async () => {
   const trimmed = (name || '').trim();
   if (!trimmed) return { data: null, error: 'empty-name' };
   const sessions = await readAll();
@@ -301,10 +367,36 @@ export async function renameSession(id, name) {
   target.updatedAt = new Date().toISOString();
   await writeAll(sessions);
   return { data: target };
+
+  });
+}
+
+/** 🆕 V1.5 METADATA — tags / note / folder. Organization only; editing any
+ *  of them bumps updatedAt so the change propagates through sync's
+ *  last-write-wins exactly like a rename does. Passing `tags`/`note`/`folder`
+ *  as undefined leaves that field untouched. */
+export async function setSessionMeta(id, { tags, note, folder } = {}) {
+  return withSessionsLock(async () => {
+  const sessions = await readAll();
+  const target = sessions.find(s => s._id === id);
+  if (!target) return { data: null, error: 'not-found' };
+  if (tags !== undefined) target.tags = sanitizeTags(tags);
+  if (note !== undefined) target.note = typeof note === 'string' ? note.slice(0, MAX_NOTE_LEN) : '';
+  if (folder !== undefined) {
+    target.folder = (typeof folder === 'string' && folder.trim())
+      ? folder.trim().slice(0, MAX_FOLDER_LEN)
+      : null;
+  }
+  target.updatedAt = new Date().toISOString();
+  await writeAll(sessions);
+  return { data: target };
+
+  });
 }
 
 /** Duplicate a session: same name + " (copy)", same windows, NEW id, newest. */
 export async function duplicateSession(id) {
+  return withSessionsLock(async () => {
   const sessions = await readAll();
   const target = sessions.find(s => s._id === id);
   if (!target) return { data: null, error: 'not-found' };
@@ -322,6 +414,8 @@ export async function duplicateSession(id) {
   sessions.unshift(copy);
   await writeAll(sessions);
   return { data: copy };
+
+  });
 }
 
 /* ---------------- import (backup / share) ---------------- */
@@ -333,6 +427,7 @@ export async function duplicateSession(id) {
  * doc has no usable timestamp). Returns { imported, skipped } for the UI.
  */
 export async function importSessions(parsed) {
+  return withSessionsLock(async () => {
   const incoming = Array.isArray(parsed?.sessions) ? parsed.sessions : [];
   if (incoming.length === 0) return { imported: 0, skipped: parsed?.skipped || 0, duplicates: 0 };
 
@@ -361,6 +456,13 @@ export async function importSessions(parsed) {
       autoKey: null,
       deletedAt: null,
       pinned: !!doc.pinned,             // 📌 survive a backup round-trip
+      // 🆕 V1.5 metadata survives a backup round-trip too (via normalizeSession
+      //    in the parser — same sanitize rules, so garbage never lands here)
+      tags: sanitizeTags(doc.tags),
+      note: typeof doc.note === 'string' ? doc.note.slice(0, MAX_NOTE_LEN) : '',
+      folder: (typeof doc.folder === 'string' && doc.folder.trim())
+        ? doc.folder.trim().slice(0, MAX_FOLDER_LEN)
+        : null,
       createdAt: doc.createdAt || now,
       updatedAt: now
     });
@@ -369,6 +471,8 @@ export async function importSessions(parsed) {
 
   await writeAll(sessions);
   return { imported, skipped: parsed?.skipped || 0, duplicates };
+
+  });
 }
 
 /* ---------------- 🧹 Data Management (Settings page) ---------------- */
@@ -379,19 +483,22 @@ const ORBITABS_KEYS = [
   STORAGE_KEY, SETTINGS_KEY,
   'snapshot', 'snapshotAt', 'lastAlive', 'cleanExit', 'exitedAt',
   'recoveryPoints', 'recoveryCandidate', 'crashDetectedAt',
-  'token' // the optional cloud-sync mirror — an account reset is part of a full reset
+  'token', 'refreshToken' // the optional cloud-sync mirror — an account reset is part of a full reset
 ];
 
 /** Reset Orbitabs: erase ALL local data (sessions, trash, snapshots, recovery
  *  points, settings) and restore defaults. The cloud account lives server-side
  *  and is untouched. Caller is responsible for the confirm dialog. */
 export async function resetAllLocalData() {
+  return withSessionsLock(async () => {
   if (hasChromeStorage()) {
     await chrome.storage.local.remove(ORBITABS_KEYS);
   } else {
     ORBITABS_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch { /* noop */ } });
   }
   return { data: { message: 'All local Orbitabs data erased.' } };
+
+  });
 }
 
 /** What's currently stored — powers the Reset confirmation and gives users an

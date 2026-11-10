@@ -1,31 +1,29 @@
 import { useState, useEffect } from 'react';
 
-/* ---------------- theme (light / dark / system) ---------------- */
+/* ---------------- theme (light / dark) ----------------
+   SYSTEM MODE REMOVED (user request): the pref is now only 'light' or
+   'dark'. A stored legacy 'system' (or unknown) value now uses the dark
+   first-run default and is persisted for consistent future launches. */
 
-export const THEMES = ['light', 'dark', 'system'];
-
-const systemPrefersDark = () =>
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+export const THEMES = ['light', 'dark'];
 
 /** Resolve + apply: toggles the `dark` class the CSS tokens key off. */
 export const applyTheme = (pref) => {
-  const dark = pref === 'dark' || (pref === 'system' && systemPrefersDark());
-  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.classList.toggle('dark', pref === 'dark');
+};
+
+/** First-run read: valid pref wins; anything else starts in dark mode. */
+const initialTheme = () => {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'light' || stored === 'dark') return stored;
+  localStorage.setItem('theme', 'dark'); // persist the default for this user
+  return 'dark';
 };
 
 export default function useTheme() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system');
+  const [theme, setTheme] = useState(initialTheme);
 
   useEffect(() => { applyTheme(theme); }, [theme]);
-
-  // 'system' follows the OS live
-  useEffect(() => {
-    if (theme !== 'system') return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => applyTheme('system');
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, [theme]);
 
   const cycleTheme = () => {
     const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];

@@ -3,9 +3,10 @@ import { AlertTriangle, X, Check, Trash2 } from 'lucide-react';
 
 // Task 11: every destructive action gets a real dialog — never instant loss.
 // Confirm copy follows the spec: "Delete session? [Cancel] [Move to Trash]".
-// Zero-motion rule (UI redesign): no entrance/exit animation — the dialog must
-// feel instant, and the component must not require requestAnimationFrame in
-// test harnesses.
+// Motion (soft Google/Material pass): backdrop fades in, the panel scales in
+// on the emphasized curve (240ms) via CSS classes only — no JS animation, no
+// requestAnimationFrame, so test harnesses stay unaffected (the dialog is
+// fully rendered on the first frame; the animation is pure presentation).
 export default function ConfirmModal({
   open, title, message,
   confirmLabel = 'Confirm', cancelLabel = 'Cancel',
@@ -15,12 +16,11 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center p-6"
-      style={{ background: 'rgba(15, 23, 42, 0.45)' }}
+      className="backdrop-in fixed inset-0 z-40 flex items-center justify-center bg-black/50 dark:bg-black/75 p-6"
       onClick={onCancel}
     >
       <div
-        className="bg-primary rounded-2xl border border-borderLight/60 shadow-2xl p-5 w-full"
+        className="dialog-in bg-primary rounded-2xl border border-borderLight/60 shadow-2xl p-5 w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">

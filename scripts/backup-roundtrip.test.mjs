@@ -73,6 +73,7 @@ const load = (p) => server.ssh = null || server.ssrLoadModule(p);
 console.log('\n── 1. UNIT: buildBackupPayload + parseBackupText ──');
 const { buildBackupPayload, parseBackupText, downloadBackupFile } = await load('/src/popup/utils/sessionBackup.js');
 const { importSessions, getSessions } = await load('/src/services/store.js');
+const { normalizeSession } = await load('/src/services/sessionSchema.js');
 
 const mkWin = (url, groupId = null) => ({ state: 'normal', focused: true, tabs: [{ url, title: url, pinned: false, active: true, groupId }], groups: [] });
 const seedSessions = [
@@ -169,6 +170,105 @@ await throwsWith('future version rejected with update guidance',
 // Valid-but-empty file imports nothing, cleanly
 const emptyRes = await importSessions(parseBackupText(JSON.stringify({ ...payload, sessions: [] })));
 ok('empty sessions[] imports nothing cleanly', emptyRes.imported === 0);
+
+/* ================================================================== *
+ * 3c. IMPORT SAFETY — bad files must NEVER touch existing data
+ * ================================================================== */
+console.log('\n── 3c. IMPORT SAFETY: duplicate / invalid / unknown-version ──');
+// The user's precious data: 2 live + 1 in-trash session.
+stored.orbi_sessions = [
+  { _id: 'keep-1', name: 'KeepA', createdAt: '2026-08-01T00:00:00.000Z', deletedAt: null, windows: [mkWin('https://keep-a.example.com')] },
+  { _id: 'keep-2', name: 'KeepB', createdAt: '2026-08-02T00:00:00.000Z', deletedAt: null, windows: [mkWin('https://keep-b.example.com')] },
+  { _id: 'keep-trash', name: 'KeepTrash', createdAt: '2026-08-03T00:00:00.000Z', deletedAt: new Date(Date.now() - 86400000).toISOString(), windows: [mkWin('https://keep-t.example.com')] },
+];
+const snap = () => JSON.stringify(stored.orbi_sessions);
+
+// A. REJECTED FILES — every bad envelope throws BEFORE any store write
+const env = (over) => JSON.stringify({ app: 'orbitabs', kind: 'orbitabs-backup', version: 1, sessions: [], ...over });
+const badFiles = [
+  ['non-JSON garbage', 'oops {{{', 'Not a valid JSON file'],
+  ['JSON scalar (number)', '42', 'not a backup object'],
+  ['JSON null', 'null', 'not a backup object'],
+  ['JSON array instead of object', '[1,2,3]', 'not an Orbitabs backup'],
+  ['missing kind field', JSON.stringify({ app: 'orbitabs', version: 1, sessions: [] }), 'not an Orbitabs backup'],
+  ['foreign app name', env({ app: 'otherapp' }), 'Unknown backup origin'],
+  ['unknown version 99', env({ version: 99 }), 'NEWER version of Orbitabs'],
+  ['unknown version 2', env({ version: 2 }), 'NEWER version of Orbitabs'],
+  ['version as string "1"', env({ version: '1' }), 'unrecognized format'],
+  ['negative version -1', env({ version: -1 }), 'unrecognized format'],
+  ['missing version', JSON.stringify({ app: 'orbitabs', kind: 'orbitabs-backup', sessions: [] }), 'Unsupported backup version'],
+  ['sessions not an array', env({ sessions: 'nope' }), 'no sessions array'],
+  ['missing sessions array', JSON.stringify({ app: 'orbitabs', kind: 'orbitabs-backup', version: 1 }), 'no sessions array'],
+];
+const beforeBad = snap();
+for (const [label, text, needle] of badFiles) {
+  await throwsWith(`rejects ${label}`, () => parseBackupText(text), needle);
+}
+ok('store BYTE-IDENTICAL after all 13 rejected files', snap() === beforeBad);
+
+// B. ALL-INVALID file — parse succeeds but nothing is importable → no write
+const allJunk = parseBackupText(env({ sessions: [null, 42, 'str', [], {}, { name: 'dead' }, { name: 'win-garbage', windows: 'nope' }] }));
+ok('all-invalid file: 0 sessions survive the parser, 7 counted skipped', allJunk.sessions.length === 0 && allJunk.skipped === 7);
+const junkRes2 = await importSessions(allJunk);
+ok('all-invalid import is a no-op (imported=0)', junkRes2.imported === 0);
+ok('store BYTE-IDENTICAL after all-invalid import', snap() === beforeBad);
+
+// B2. Direct calls with garbage input (defensive: bypasses the parser)
+const directs = [null, undefined, {}, { sessions: null }, { sessions: 'x' }];
+let directOk = true;
+for (const arg of directs) {
+  const r = await importSessions(arg);
+  if (r.imported !== 0 || r.duplicates !== 0) directOk = false;
+}
+ok('importSessions(null/undefined/{}/bad-shape) → {imported:0}, no crash', directOk);
+ok('store BYTE-IDENTICAL after direct garbage calls', snap() === beforeBad);
+
+// C. UNKNOWN session-level schemaVersion inside a VALID envelope
+const futureDoc = { name: 'FutureDoc', schemaVersion: 99, windows: [mkWin('https://future.example.com')] };
+const futureParsed = parseBackupText(env({ sessions: [futureDoc] }));
+ok('unknown session schemaVersion=99 is normalized to v1 (not rejected, not stored raw)',
+  futureParsed.sessions.length === 1 && futureParsed.sessions[0].schemaVersion === 1);
+const futureRes = await importSessions(futureParsed);
+const storedFuture = (await getSessions()).data.find(s => s.name === 'FutureDoc');
+ok('unknown-version doc LANDS + round-trips the locked schema',
+  futureRes.imported === 1 && !!storedFuture &&
+  !!normalizeSession(storedFuture) &&
+  normalizeSession(storedFuture).windows[0].tabs[0].url === 'https://future.example.com');
+
+// D. DUPLICATE gate: same name + DIFFERENT createdAt → new session (no false dedupe)
+stored.orbi_sessions = [seedSessions[0]]; // Alpha @ 2026-09-01 already lives here
+const sameName = JSON.stringify({ ...payload, sessions: [
+  { name: 'Alpha', createdAt: '2026-05-05T00:00:00.000Z', windows: [mkWin('https://alpha-reissue.example.com')] },
+] });
+const snr = await importSessions(parseBackupText(sameName));
+const alphas = (await getSessions()).data.filter(s => s.name === 'Alpha');
+ok('same name + different createdAt → imported (dedupe needs BOTH)', snr.imported === 1 && alphas.length === 2);
+const snr2 = await importSessions(parseBackupText(sameName));
+ok('re-import of that file → exact duplicate skipped', snr2.imported === 0 && snr2.duplicates === 1);
+ok('Alpha store content unchanged by the duplicate re-import',
+  (await getSessions()).data.filter(s => s.name === 'Alpha').length === 2);
+
+// E. MIXED file against a populated store — valid lands, junk skipped, existing + trash intact
+stored.orbi_sessions = [
+  { _id: 'keep-1', name: 'KeepA', createdAt: '2026-08-01T00:00:00.000Z', deletedAt: null, windows: [mkWin('https://keep-a.example.com')] },
+  { _id: 'keep-trash', name: 'KeepTrash', createdAt: '2026-08-03T00:00:00.000Z', deletedAt: new Date(Date.now() - 86400000).toISOString(), windows: [mkWin('https://keep-t.example.com')] },
+  seedSessions[0], // Alpha already lives here → the mixed file's Alpha entry must DEDUPE
+];
+const mixedRes = await importSessions(parseBackupText(env({ sessions: [
+  'garbage',
+  { name: 'Alpha', createdAt: '2026-09-01T10:00:00.000Z', windows: [mkWin('https://alpha.example.com')] }, // duplicate
+  { name: 'Fresh', createdAt: '2026-10-01T00:00:00.000Z', windows: [mkWin('https://fresh.example.com')] },  // valid
+  { windows: [] },                                                                                        // dead
+] })));
+const finalStore = stored.orbi_sessions;
+ok('mixed file: 1 imported, 1 duplicate, 2 dead skipped',
+  mixedRes.imported === 1 && mixedRes.duplicates === 1 && mixedRes.skipped === 2);
+ok('existing live session untouched (same id, same content)',
+  finalStore.some(s => s._id === 'keep-1' && s.name === 'KeepA' && s.windows[0].tabs[0].url === 'https://keep-a.example.com'));
+ok('trash session STILL in trash (import never touches deletedAt)',
+  finalStore.some(s => s._id === 'keep-trash' && s.deletedAt));
+ok('no id collisions: every store id unique after imports',
+  new Set(finalStore.map(s => s._id)).size === finalStore.length);
 
 /* ================================================================== *
  * 4. UI — Settings page Backup & Share section

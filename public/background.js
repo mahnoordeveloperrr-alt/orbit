@@ -26,8 +26,32 @@
  * at the top level so the sleeping worker can be woken by events.
  */
 
-const API_BASE = 'http://127.0.0.1:5000/api';
+const DEFAULT_API_ORIGIN = 'http://127.0.0.1:5000'; // dev default — Settings → "Server URL" (apiBaseUrl) overrides it
+// 🏢 Hosted production API (Cloudflare Worker + D1, Sites platform).
+//    Baked as the Store-build default so cloud sync is zero-config:
+//    a Store install must never silently target localhost (that's the dev
+//    machine, not a real server). Chrome adds update_url to the manifest
+//    only for Store/enterprise installs — unpacked dev loads have none, so
+//    the localhost default still works locally.
+//    Keep in sync with STORED_API_ORIGIN in src/services/api.js (SW can't import).
+const STORED_API_ORIGIN = 'https://site-8b67ef3788b2498f88d007d22c888375.freebuff.page';
+const isStoreInstalled = () => {
+  try { return !!chrome.runtime?.getManifest?.().update_url; } catch { return false; }
+};
+const apiOrigin = (settings) => {
+  const custom = String(settings?.apiBaseUrl || '').trim().replace(/\/+$/, '');
+  if (custom) return custom; // explicit Server URL always wins (self-hosters)
+  return isStoreInstalled() ? STORED_API_ORIGIN : DEFAULT_API_ORIGIN;
+};
 const LOCAL_SESSIONS_KEY = 'orbi_sessions'; // same key src/services/store.js reads/writes
+const SESSION_LOCK = 'orbitabs-sessions';
+async function withSessionsLock(work) {
+  const locks = globalThis.navigator?.locks;
+  return locks?.request
+    ? locks.request(SESSION_LOCK, { mode: 'exclusive' }, work)
+    : work();
+}
+const deepClone = (val) => (typeof structuredClone === 'function' ? structuredClone(val) : JSON.parse(JSON.stringify(val)));
 const SCHEMA_VERSION = 1;
 const DEBOUNCE_MS = 800;        // coalesce event bursts into one capture
 const HEARTBEAT_SEC = 30;       // fallback snapshot freshness (user-configurable: Settings → Auto-save frequency)
@@ -63,6 +87,7 @@ const SETTINGS_DEFAULTS = {
   trashRetentionDays: 30,
   localOnly: false,
   cloudSync: false,
+  apiBaseUrl: '',    // Server URL override for cloud features ('' = built-in default: hosted API for Store builds, localhost for dev)
 };
 
 async function getSettings() {
@@ -215,6 +240,7 @@ function snapshotToV1Session(snapshot) {
 // LOCAL-FIRST: upsert the Live Backup into chrome.storage.local so auto-save
 // works with NO account. Cloud sync (below) is optional and token-gated.
 async function upsertLocalLiveBackup(snapshot) {
+  return withSessionsLock(async () => {
   if (!snapshot.windows.some(w => w.tabs.length > 0)) return;
   const payload = snapshotToV1Session(snapshot);
   const now = new Date().toISOString();
@@ -245,6 +271,8 @@ async function upsertLocalLiveBackup(snapshot) {
     });
   }
   await chrome.storage.local.set({ [LOCAL_SESSIONS_KEY]: list });
+
+  });
 }
 
 // ☁️ OPTIONAL CLOUD — runs only when the user opted into cloud sync (Settings
@@ -264,7 +292,7 @@ async function syncToBackend() {
   const payload = snapshotToV1Session(snapshot);
   let res;
   try {
-    res = await fetch(`${API_BASE}/sessions/autosave`, {
+    res = await authedFetch(apiOrigin(settings), '/api/sessions/autosave', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
@@ -277,6 +305,354 @@ async function syncToBackend() {
   }
   if (!res.ok) throw new Error(`autosave sync failed: HTTP ${res.status}`);
   return res.json();
+}
+
+/* ------------------------------------------------------------------ *
+ * 🔑 AUTHED FETCH — one place where a 7-day access JWT quietly turns into a
+ * fresh one. On401 we try the refresh token ONCE (rotated server-side),
+ * retry the original request, and only surface a real auth failure when the
+ * refresh itself is dead (expired/revoked). Without this a subscriber's sync
+ * would start failing at day 7 and the popup would sign them out over a
+ * routine expiry. `refreshToken` is per-device and lives in storage next to
+ * the token (mirrored by the popup on sign-in).
+ * ------------------------------------------------------------------ */
+async function refreshSession(origin) {
+  try {
+    const { token, refreshToken } = await chrome.storage.local.get(['token', 'refreshToken']);
+    if (!token || !refreshToken) return null;
+    const res = await fetch(`${origin}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => ({}));
+    if (!data.token) return null;
+    const next = { token: data.token };
+    if (data.refreshToken) next.refreshToken = data.refreshToken; // rotation
+    await chrome.storage.local.set(next);
+    return data.token;
+  } catch { return null; } // network/timeout → caller keeps the honest failure
+}
+
+async function authedFetch(origin, path, init = {}) {
+  const res = await fetch(`${origin}${path}`, init);
+  if (res.status !== 401) return res;
+  const fresh = await refreshSession(origin);
+  if (!fresh) return res; // genuinely signed out — let the401 flow through
+  return fetch(`${origin}${path}`, {
+    ...init,
+    headers: { ...(init.headers || {}), Authorization: `Bearer ${fresh}` },
+  });
+}
+
+// ☁️☁️ FULL-LIBRARY SYNC — the second half of cloud sync. syncToBackend()
+// keeps ONE Live Backup up to date; this syncs the user's SAVED sessions so a
+// second device can see and restore them. Local-first rules that must never
+// break (mirrors src/services/store.js + the import dedupe gate):
+//   • chrome.storage.local stays the source of truth — a failed sync skips
+//     and the next alarm retries; it NEVER deletes or blanks local data;
+//   • additive merge with the same duplicate signature as file import
+//     (name + createdAt), so re-syncing never piles up copies;
+//   • per-session conflicts resolve last-write-wins on updatedAt, and the
+//     server enforces the same rule — a stale client can't clobber a newer
+//     server copy (PUT answers conflict:'server-newer' and we adopt it);
+//   • 🔄 DELETIONS PROPAGATE (V1.6): a session trashed here is pushed as a
+//     server tombstone and lands in every other device's trash; a restore
+//     lifts the tombstone and un-trashes the others. Purged rows keep their
+//     tombstone (30 days, same retention as trash). Tombstone application is
+//     LWW too — a local edit NEWER than the delete revives instead of dying;
+//   • Live Backup rides its own endpoint and is skipped here so it's never
+//     duplicated as a plain session.
+async function syncLibrary() {
+  const settings = await getSettings();
+  if (settings.localOnly) return { skipped: 'local-only' };
+  if (!settings.cloudSync) return { skipped: 'cloud-sync-off' };
+  const { token } = await chrome.storage.local.get('token');
+  if (!token) return { skipped: 'not-logged-in' };
+  const origin = apiOrigin(settings);
+  if (!origin) return { skipped: 'server-not-configured' }; // defensive only — origin is always non-empty now
+
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const timeout = { signal: AbortSignal.timeout(15000) }; // never hang the worker
+  const sig = (s) => JSON.stringify([s.name || null, s.createdAt || null]);
+
+  // 1) PULL — cloud → local (additive, deduped by name+createdAt)
+  let cloud = [];
+  try {
+    const res = await authedFetch(origin, '/api/sessions', { headers, ...timeout });
+    if (res.status === 401) {
+      // refresh already failed — the session is genuinely dead. Mirror the
+      // popup's honest "Not connected" state instead of a zombie login.
+      await chrome.storage.local.remove(['token', 'refreshToken']).catch(() => {});
+      const status = { lastSyncAt: Date.now(), pushed: 0, updated: 0, pulled: 0, deleted: 0, restored: 0, lastError: 'auth-expired' };
+      await chrome.storage.local.set({ orbi_sync_status: status }).catch(() => {});
+      return { skipped: 'auth-expired' };
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    cloud = await res.json();
+    if (!Array.isArray(cloud)) cloud = [];
+  } catch (e) {
+    const status = { lastSyncAt: Date.now(), pushed: 0, updated: 0, pulled: 0, deleted: 0, restored: 0, lastError: 'backend-unreachable' };
+    await chrome.storage.local.set({ orbi_sync_status: status }).catch(() => {});
+    return { skipped: 'backend-unreachable' };
+  }
+
+  // 1b) PULL tombstones — 🔄 which ids the cloud says are deleted (trashed
+  //     OR purged). Best-effort: an older self-hosted server without the
+  //     endpoint (404) simply has nothing to propagate, and a hiccup here
+  //     never blocks the live-list merge — next alarm retries.
+  let tombstones = [];
+  let syncWarnings = 0;
+  try {
+    const res = await authedFetch(origin, '/api/sessions/tombstones', { headers, ...timeout });
+    if (res.ok) {
+      const arr = await res.json().catch(() => []);
+      if (Array.isArray(arr)) tombstones = arr;
+    }
+  } catch { /* best-effort — see above */ }
+
+  const { [LOCAL_SESSIONS_KEY]: raw } = await chrome.storage.local.get(LOCAL_SESSIONS_KEY);
+  const originalLocal = Array.isArray(raw) ? deepClone(raw) : [];
+  const local = deepClone(originalLocal);
+  const have = new Set(local.filter(s => !s.isAutoSave).map(sig));
+  // Identity by cloudId too: a doc we already own locally (even under a new
+  // name after a rename) must never be re-pulled as a duplicate copy.
+  const haveCloudIds = new Set(local.map(s => s.cloudId).filter(Boolean).map(String));
+
+  // 1c) 🔄 APPLY DELETIONS / RESTORES from the cloud — runs BEFORE the
+  //     additive pull so a remotely deleted session never re-arrives as a
+  //     fresh copy. Both directions are last-write-wins:
+  //       • tombstone newer than the local copy  → move it to local trash;
+  //       • server copy live again (restored) and newer than our delete →
+  //         un-trash it here too (restore bumps updatedAt server-side).
+  let deleted = 0, restored = 0;
+  const tombBy = new Map(tombstones.filter(t => t && t._id).map(t => [String(t._id), t]));
+  for (const s of local) {
+    if (!s.cloudId || s.isAutoSave) continue;
+    const t = tombBy.get(String(s.cloudId));
+    if (t && !s.deletedAt) {
+      const localAt = new Date(s.updatedAt || s.createdAt || 0).getTime();
+      const delAt = new Date(t.deletedAt || 0).getTime();
+      if (localAt <= delAt) { // a NEWER local edit revives instead (push phase)
+        s.deletedAt = t.deletedAt || new Date().toISOString();
+        deleted++;
+      }
+    } else if (!t && s.deletedAt) {
+      const doc = cloud.find(c => String(c._id) === String(s.cloudId));
+      const cloudAt = doc ? new Date(doc.updatedAt || doc.createdAt || 0).getTime() : 0;
+      if (doc && cloudAt > new Date(s.deletedAt).getTime()) {
+        s.deletedAt = null;
+        if (doc.updatedAt) s.updatedAt = doc.updatedAt; // adopt → no churn next sync
+        restored++;
+      }
+    }
+  }
+  let pulled = 0;
+  for (const doc of cloud) {
+    if (doc?.isAutoSave) continue; // live backup has its own upsert path
+    if (!Array.isArray(doc?.windows) || doc.windows.length === 0) continue;
+    if (doc._id && haveCloudIds.has(String(doc._id))) continue; // already ours
+    if (have.has(sig(doc))) continue;
+    local.unshift({
+      _id: `local-cloud-${Date.now()}-${pulled}`,
+      name: doc.name || 'Cloud session',
+      windows: doc.windows,
+      schemaVersion: SCHEMA_VERSION,
+      isAutoSave: false,
+      autoKey: null,
+      deletedAt: null,
+      pinned: !!doc.pinned,
+      // 🆕 V1.5 metadata rides the same pull path (same sanitize contract as
+      //    the server normalizer + popup normalizeSession)
+      tags: Array.isArray(doc.tags) ? doc.tags.filter(t => typeof t === 'string' && t.trim()).slice(0, 20) : [],
+      note: typeof doc.note === 'string' ? doc.note : '',
+      folder: (typeof doc.folder === 'string' && doc.folder.trim()) ? doc.folder.trim() : null,
+      createdAt: doc.createdAt || new Date().toISOString(),
+      updatedAt: doc.updatedAt || new Date().toISOString(),
+      cloudId: doc._id || null // remember for future updates
+    });
+    have.add(sig(doc));
+    pulled++;
+  }
+
+  // 2) PUSH — local → cloud (create unknown, update diverged, adopt newer)
+  let pushed = 0, updated = 0, failedSessions = syncWarnings;
+  let quotaHit = false; // server said the free plan's sync cap is reached
+  // Shared create path — used for brand-new sessions AND for the edge where
+  // our row vanished server-side (purged by the other device) while our copy
+  // is the newer write: the tombstoned id stays deleted, the edit is saved
+  // under a fresh id instead of being lost to an endless 404.
+  const createOnCloud = async (s) => {
+    const res = await authedFetch(origin, '/api/sessions', {
+      method: 'POST', headers, ...timeout,
+      // createdAt travels with the doc so the signature (name+createdAt)
+      // matches on every future sync — otherwise the server stamps its own
+      // time and this device would re-pull its own sessions as duplicates.
+      // 🆕 V1.5: tags/note/folder travel too, so a tagged session keeps its
+      //    organization on the server (and every other device).
+      body: JSON.stringify({
+        name: s.name, windows: s.windows, createdAt: s.createdAt, updatedAt: s.updatedAt,
+        tags: s.tags || [], note: s.note || '', folder: s.folder ?? null
+      })
+    });
+    if (res.ok) {
+      const doc = await res.json().catch(() => ({}));
+      s.cloudId = doc._id || null;
+      // Adopt the server's authoritative stamp so the NEXT sync sees
+      // localAt === cloudAt (no perpetual spurious "update" churn).
+      if (doc.updatedAt) s.updatedAt = doc.updatedAt;
+      pushed++;
+      return true;
+    }
+    if (res.status === 402) quotaHit = true; // surfaced as status.lastError
+    failedSessions++;
+    return false;
+  };
+  const live = local.filter(s => !s.isAutoSave && !s.deletedAt && Array.isArray(s.windows) && s.windows.length > 0);
+  const cloudBySig = new Map(cloud.filter(s => !s.isAutoSave).map(s => [sig(s), s]));
+  for (const s of live) {
+    if (quotaHit) break; // no point hammering an honest402 with more creates
+    let match = (s.cloudId && cloud.find(c => String(c._id) === String(s.cloudId))) || cloudBySig.get(sig(s)) || null;
+    // 🔄 Restored locally while the server still holds a tombstone → lift it.
+    //     If our edit is NEWER than the delete we fall into the PUT path with
+    //     a synthetic match instead (server revives on the newer stamp).
+    if (!match && s.cloudId && tombBy.has(String(s.cloudId))) {
+      const t = tombBy.get(String(s.cloudId));
+      const localAt = new Date(s.updatedAt || s.createdAt || 0).getTime();
+      const delAt = new Date(t.deletedAt || 0).getTime();
+      if (localAt > delAt) {
+        match = { _id: s.cloudId, updatedAt: t.deletedAt }; // synthetic → PUT revives
+      } else {
+        const res = await authedFetch(origin, `/api/sessions/${s.cloudId}/restore`, {
+          method: 'POST', headers, ...timeout,
+        });
+        if (res.ok) {
+          match = await res.json().catch(() => null);
+          tombBy.delete(String(s.cloudId));
+          restored++;
+        } else {
+          failedSessions++;
+          continue; // refused → keep local state, next sync retries honestly
+        }
+      }
+    }
+    try {
+      if (!match) {
+        await createOnCloud(s);
+      } else {
+        s.cloudId = match._id || s.cloudId;
+        const localAt = new Date(s.updatedAt || s.createdAt || 0).getTime();
+        const cloudAt = new Date(match.updatedAt || match.createdAt || 0).getTime();
+        if (localAt > cloudAt) {
+          const res = await authedFetch(origin, `/api/sessions/${match._id}`, {
+            method: 'PUT', headers, ...timeout,
+            body: JSON.stringify({
+              name: s.name, windows: s.windows, updatedAt: s.updatedAt,
+              tags: s.tags || [], note: s.note || '', folder: s.folder ?? null
+            })
+          });
+          if (!res.ok && res.status !== 404) failedSessions++;
+          if (res.ok) {
+            const body = await res.json().catch(() => ({}));
+            if (body?.conflict === 'server-newer' && body.session) {
+              // Server copy is newer — take it (LWW the other way).
+              s.name = body.session.name || s.name;
+              s.windows = body.session.windows || s.windows;
+              s.updatedAt = body.session.updatedAt || s.updatedAt;
+              // 🆕 V1.5 metadata adopted with the same LWW branch
+              if (Array.isArray(body.session.tags)) s.tags = body.session.tags;
+              if (typeof body.session.note === 'string') s.note = body.session.note;
+              if (body.session.folder !== undefined) s.folder = body.session.folder;
+              // 🔄 The newer server copy may BE a delete (soft-delete bumps
+              //     updated_at) — adopt the trash state too, honestly.
+              if (body.session.deletedAt && !s.deletedAt) {
+                s.deletedAt = body.session.deletedAt;
+                deleted++;
+              }
+            } else {
+              // Adopt the server's post-write stamp (same anti-churn rule as POST).
+              if (body.updatedAt) s.updatedAt = body.updatedAt;
+              updated++;
+            }
+          } else if (res.status === 404) {
+            // Row vanished (purged elsewhere) while our copy was the newer
+            // write → save the edit under a fresh id; the old id's tombstone
+            // keeps every other device's copy in the trash where it belongs.
+            await createOnCloud(s);
+          }
+        } else if (cloudAt > localAt) {
+          // Cloud copy is newer — adopt it locally.
+          s.name = match.name || s.name;
+          s.windows = match.windows || s.windows;
+          s.updatedAt = match.updatedAt || s.updatedAt;
+          // 🆕 V1.5 metadata adopted with the same LWW branch
+          if (Array.isArray(match.tags)) s.tags = match.tags;
+          if (typeof match.note === 'string') s.note = match.note;
+          if (match.folder !== undefined) s.folder = match.folder;
+          updated++;
+        }
+      }
+    } catch (e) { failedSessions++; /* keep going; report partial sync honestly */ }
+  }
+
+  // 2b) 🔄 PROPAGATE LOCAL DELETES — a session we trashed that the cloud
+  //     still serves live → DELETE it there (server keeps a tombstone so
+  //     every other device trashes its copy on their next sync). Skip when a
+  //     tombstone already exists: it's already deleted on the server.
+  for (const s of local) {
+    if (!s.cloudId || s.isAutoSave || !s.deletedAt) continue;
+    if (tombBy.has(String(s.cloudId))) continue; // already deleted there
+    if (!cloud.some(c => String(c._id) === String(s.cloudId))) continue; // never pushed
+    try {
+      const res = await authedFetch(origin, `/api/sessions/${s.cloudId}`, {
+        method: 'DELETE', headers, ...timeout,
+      });
+      if (res.ok) {
+        tombBy.set(String(s.cloudId), { _id: s.cloudId, deletedAt: s.deletedAt });
+        deleted++;
+      } else {
+        failedSessions++;
+      }
+    } catch { failedSessions++; /* retried next alarm */ }
+
+  }
+
+  // 3) Commit under the same cross-context lock as popup writes. Merge any
+  //    local changes made while network requests were in flight, and abort
+  //    if the user signed out, reset data, or turned sync off meanwhile.
+  const committed = await withSessionsLock(async () => {
+    const latestData = await chrome.storage.local.get([LOCAL_SESSIONS_KEY, 'token', 'orbi_settings']);
+    if (!latestData.token || !latestData.orbi_settings?.cloudSync || latestData.orbi_settings?.localOnly) return false;
+    const latest = Array.isArray(latestData[LOCAL_SESSIONS_KEY]) ? latestData[LOCAL_SESSIONS_KEY] : [];
+    const keyOf = (s) => String(s?._id || s?.id || s?.cloudId || '');
+    const originalById = new Map(originalLocal.map(s => [keyOf(s), s]).filter(([id]) => id));
+    const latestById = new Map(latest.map(s => [keyOf(s), s]).filter(([id]) => id));
+    const merged = new Map(local.map(s => [keyOf(s), s]).filter(([id]) => id));
+    for (const [id, original] of originalById) {
+      const current = latestById.get(id);
+      if (!current) {
+        for (const [candidateId, candidate] of merged) {
+          if (candidateId === id || (original.cloudId && String(candidate.cloudId) === String(original.cloudId))) merged.delete(candidateId);
+        }
+      } else if (JSON.stringify(current) !== JSON.stringify(original)) {
+        merged.set(id, current); // newer local save, rename, metadata, trash, or restore wins
+      }
+    }
+    for (const [id, current] of latestById) {
+      if (!originalById.has(id) && !merged.has(id)) merged.set(id, current); // new local sessions survive
+    }
+    await chrome.storage.local.set({ [LOCAL_SESSIONS_KEY]: [...merged.values()] });
+    return true;
+  });
+  if (!committed) return { pushed, updated, pulled: 0, deleted: 0, restored: 0, skipped: 'sync-disabled-or-signed-out' };
+  const status = {
+    lastSyncAt: Date.now(), pushed, updated, pulled, deleted, restored,
+    lastError: quotaHit ? 'quota-exceeded' : failedSessions ? 'partial-sync' : null,
+  };
+  await chrome.storage.local.set({ orbi_sync_status: status });
+  return { pushed, updated, pulled, deleted, restored, failedSessions, lastError: status.lastError };
 }
 
 /* ------------------------------------------------------------------ *
@@ -312,22 +688,45 @@ async function restoreSnapshot(snapshot, options = {}) {
   if (o.behavior === 'current') {
     try {
       const cur = chrome.windows.getCurrent ? await chrome.windows.getCurrent() : null;
-      const savedTabs = windows.flatMap(w => (w.tabs || [])).filter(t => t.url);
-      const focusedWin = windows.find(w => w.focused) || windows[0];
-      for (const t of savedTabs) {
-        // The saved active tab of the saved focused window lands active here.
-        const isActive = o.active && !!t.active && !!focusedWin && (focusedWin.tabs || []).includes(t);
+      const savedTabs = windows.flatMap((win, sourceWindowIndex) =>
+        (win.tabs || []).filter(t => t.url).map(tab => ({ tab, sourceWindowIndex, sourceFocused: !!win.focused }))
+      );
+      const createdTabs = [];
+      for (const entry of savedTabs) {
+        const { tab, sourceFocused } = entry;
         try {
-          await chrome.tabs.create({
-            url: t.url,
+          const created = await chrome.tabs.create({
+            url: tab.url,
             ...(cur?.id ? { windowId: cur.id } : {}),
-            active: !!isActive,
-            ...(o.pinned && t.pinned ? { pinned: true } : {})
+            active: !!(o.active && sourceFocused && tab.active),
+            ...(o.pinned && tab.pinned ? { pinned: true } : {})
           });
-          restoredTabs++;
-        } catch (e) { /* dead URL — skip, keep the rest */ }
+          if (created?.id != null) {
+            createdTabs.push({ ...entry, id: created.id });
+            restoredTabs++;
+          }
+        } catch (e) { /* invalid or restricted URL � keep restoring the rest */ }
       }
-      restoredWindows = 1;
+      if (o.groups && chrome.tabs.group && cur?.id) {
+        for (let sourceWindowIndex = 0; sourceWindowIndex < windows.length; sourceWindowIndex++) {
+          const win = windows[sourceWindowIndex];
+          for (const group of win.groups || []) {
+            const ids = createdTabs
+              .filter(entry => entry.sourceWindowIndex === sourceWindowIndex && entry.tab.groupId === group.id)
+              .map(entry => entry.id);
+            if (!ids.length) continue;
+            try {
+              const groupId = await chrome.tabs.group({ tabIds: ids, createProperties: { windowId: cur.id } });
+              const props = {};
+              if (group.title) props.title = group.title;
+              if (group.color) props.color = group.color;
+              if (Object.keys(props).length) await chrome.tabGroups.update(groupId, props);
+              if (group.collapsed) await chrome.tabGroups.update(groupId, { collapsed: true });
+            } catch (e) { console.error('[Orbitabs] group restore failed in current window:', e); }
+          }
+        }
+      }
+      restoredWindows = createdTabs.length ? 1 : 0;
       return { restoredWindows, restoredTabs, behavior: 'current' };
     } catch (e) {
       console.error('[Orbitabs] current-window restore failed, falling back to new windows:', e);
@@ -409,6 +808,39 @@ async function restoreSnapshot(snapshot, options = {}) {
   return { restoredWindows, restoredTabs };
 }
 
+/** LEGACY pre-v1 doc ({ urls[], groups[].urlIndices }) → v1 windows[] as ONE
+ *  window — the worker's mirror of popup sessionSchema.legacyToV1. The hotkey
+ *  must work even before the popup has ever lazily upgraded the doc, otherwise
+ *  Alt+Shift+R on an old-format save silently restores nothing. Pure: no mutation. */
+function legacySessionToWindows(doc) {
+  const urls = (Array.isArray(doc?.urls) ? doc.urls : [])
+    .map(u => (typeof u === 'string' ? u.trim() : ''))
+    .filter(Boolean);
+  if (urls.length === 0) return [];
+  const legacyGroups = Array.isArray(doc.groups) ? doc.groups : [];
+  const groupsOut = [];
+  const gidByIndex = new Map(); // legacy group index → synthetic v1 id
+  const tabs = urls.map((url, i) => {
+    const gi = legacyGroups.findIndex(g => g && Array.isArray(g.urlIndices) && g.urlIndices.includes(i));
+    let groupId = null;
+    if (gi >= 0) {
+      if (!gidByIndex.has(gi)) {
+        const id = `g${gi + 1}`;
+        gidByIndex.set(gi, id);
+        groupsOut.push({
+          id,
+          title: String(legacyGroups[gi].title || ''),
+          color: legacyGroups[gi].color || 'grey',
+          collapsed: !!legacyGroups[gi].collapsed
+        });
+      }
+      groupId = gidByIndex.get(gi);
+    }
+    return { url, title: '', pinned: false, active: false, groupId };
+  });
+  return [{ state: 'normal', focused: true, tabs, groups: groupsOut }];
+}
+
 /* ------------------------------------------------------------------ *
  * Crash detection + recovery
  * ------------------------------------------------------------------ */
@@ -444,6 +876,7 @@ async function clearRecoveryState() {
 /** Same local upsert as the Live Backup, but as a NAMED session so it never
  *  gets overwritten by the auto-save worker. Counted tabs land in the name. */
 async function quickSaveLocally() {
+  return withSessionsLock(async () => {
   // NOTE: deliberately NOT gated on autoSaveEnabled() — that setting controls
   // the passive Live Backup, not an explicit user action. The keyboard
   // shortcut and popup must never silently drop a requested save.
@@ -470,6 +903,8 @@ async function quickSaveLocally() {
   });
   await chrome.storage.local.set({ [LOCAL_SESSIONS_KEY]: list });
   return { ok: true, windows: snapshot.windows.length, tabs: tabCount };
+
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -508,6 +943,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       .catch(e => console.error('[Orbitabs] local live-backup:', e));
   } else if (alarm.name === 'orbi-autosave-sync') {
     syncToBackend().catch(e => console.error('[Orbitabs] backend autosave:', e));
+    // ☁️ Full-library sync rides the same 30-min cadence (opt-in, same gates).
+    syncLibrary().catch(e => console.error('[Orbitabs] library sync:', e));
   }
 });
 
@@ -538,12 +975,43 @@ chrome.commands?.onCommand?.addListener((command) => {
     (async () => {
       const { [LOCAL_SESSIONS_KEY]: sessions } = await chrome.storage.local.get(LOCAL_SESSIONS_KEY);
       const list = Array.isArray(sessions) ? sessions : [];
-      const newest = list
-        .filter(s => !s.deletedAt)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      const alive = list.filter(s => !s.deletedAt);
+      // Restorable = v1 windows[] with content, OR a pre-v1 urls[] doc.
+      const restorable = (s) =>
+        (Array.isArray(s?.windows) && s.windows.length > 0) ||
+        (Array.isArray(s?.urls) && s.urls.length > 0);
+
+      // ⚠️ THE AUTO-SAVE LIVE BACKUP IS ALWAYS "NEWEST": the heartbeat re-stamps
+      //    its createdAt every ~30s (upsertLocalLiveBackup), so a plain
+      //    newest-first pick restored the CURRENT browser state — the hotkey
+      //    looked dead (it duplicated open tabs) and never reopened what
+      //    Alt+Shift+S had just saved. Prefer the user's own saves
+      //    (isAutoSave=false — Quick Save, popup saves); the Live Backup is
+      //    only the fallback when nothing else exists (still useful seconds
+      //    after closing windows, before the next heartbeat overwrites it).
+      const manual = alive.filter(s => !s.isAutoSave && restorable(s));
+      const pool = manual.length > 0 ? manual : alive.filter(restorable);
+      const newest = pool.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
       if (!newest) return; // nothing saved yet — stay silent
-      await restoreSnapshot({ windows: newest.windows || [] });
-    })().catch(e => console.error('[Orbitabs] restore-last command failed:', e));
+
+      const windows = (Array.isArray(newest.windows) && newest.windows.length > 0)
+        ? newest.windows
+        : legacySessionToWindows(newest);
+
+      const r = await restoreSnapshot({ windows });
+      // Nothing actually opened (corrupt doc / every URL dead) → stay silent,
+      // same as "nothing saved yet". Otherwise pulse the SAME green ✓ as
+      // quick-save so the hotkey gives visible feedback (TEST_PLAN Test L).
+      if (!r || !(r.restoredTabs > 0)) return;
+      chrome.action.setBadgeText({ text: '✓' });
+      chrome.action.setBadgeBackgroundColor({ color: '#16a34a' });
+      setTimeout(() => chrome.action.setBadgeText({ text: '' }), 1200);
+    })().catch(e => {
+      console.error('[Orbitabs] restore-last command failed:', e);
+      chrome.action.setBadgeText({ text: '✗' });
+      chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+      setTimeout(() => chrome.action.setBadgeText({ text: '' }), 1500);
+    });
   }
 });
 
@@ -598,26 +1066,51 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const settings = await getSettings();
-  await ensureAlarms(settings.autoSaveFreqSec);
+  // Observability: a 'entered' phase proves the listener RAN; final write
+  // records WHY the check decided what it decided — the only way to tell
+  // "detection ran and said no" from "detection never ran" (QA/support).
+  const startedAt = Date.now();
+  const setDiag = (v) => chrome.storage.local.set({ lastStartupCheck: v }).catch(() => {});
+  await setDiag({ at: startedAt, phase: 'entered' });
+  try {
+    const settings = await getSettings();
+    await ensureAlarms(settings.autoSaveFreqSec);
 
-  const { snapshot, cleanExit, lastAlive } = await chrome.storage.local.get(
-    ['snapshot', 'cleanExit', 'lastAlive']
-  );
+    const { snapshot, cleanExit, lastAlive } = await chrome.storage.local.get(
+      ['snapshot', 'cleanExit', 'lastAlive']
+    );
 
-  const heartbeatFresh = lastAlive && (Date.now() - lastAlive) < CRASH_WINDOW_MS;
-  // Crash detection honors the Crash Recovery switch: OFF = never interrupt
-  // the user with a recovery offer (and the badge stays quiet).
-  const crashed = settings.crashRecovery &&
-    cleanExit !== true && !!snapshot && !!heartbeatFresh && snapshot.windows?.length > 0;
+    const heartbeatFresh = lastAlive && (Date.now() - lastAlive) < CRASH_WINDOW_MS;
+    // Crash detection honors the Crash Recovery switch: OFF = never interrupt
+    // the user with a recovery offer (and the badge stays quiet).
+    const crashed = settings.crashRecovery &&
+      cleanExit !== true && !!snapshot && !!heartbeatFresh && snapshot.windows?.length > 0;
 
-  if (crashed) {
-    await markCrashAndQueueRecovery(snapshot);
+    if (crashed) {
+      await markCrashAndQueueRecovery(snapshot);
+    }
+
+    await setDiag({
+      at: startedAt,
+      phase: 'done',
+      crashed: !!crashed,
+      reasons: {
+        crashRecovery: !!settings.crashRecovery,
+        cleanExitWasTrue: cleanExit === true,
+        hasSnapshot: !!snapshot,
+        snapshotWindows: (snapshot?.windows || []).length,
+        heartbeatFresh: !!heartbeatFresh,
+        lastAliveAgeMs: lastAlive ? Date.now() - lastAlive : null,
+      },
+    });
+
+    // Mark "running" for the next exit-crash comparison
+    await chrome.storage.local.set({ cleanExit: false, lastAlive: Date.now() });
+    flushSnapshot();
+  } catch (e) {
+    await setDiag({ at: startedAt, phase: 'error', error: String(e) });
+    console.error('[Orbitabs] onStartup crash check failed:', e);
   }
-
-  // Mark "running" for the next exit-crash comparison
-  await chrome.storage.local.set({ cleanExit: false, lastAlive: Date.now() });
-  flushSnapshot();
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -711,8 +1204,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg?.type === 'SYNC_NOW') {
-    syncToBackend().then(r => sendResponse({ ok: true, result: r }))
-      .catch(e => sendResponse({ ok: false, error: String(e) }));
+    (async () => {
+      try {
+        // Both halves: the Live Backup snapshot AND the saved-session library.
+        // The legacy result.skipped contract (settings/reliability suites) is
+        // preserved — backup's outcome stays top-level, library nests under it.
+        const backup = await syncToBackend();
+        let library;
+        try { library = await syncLibrary(); } catch (e) { library = { error: String(e) }; }
+        sendResponse({ ok: true, result: { ...backup, library } });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e) });
+      }
+    })();
     return true;
   }
 

@@ -1,218 +1,900 @@
 /* 🖊 ORBITABS MARKUP — overlay + chip styles (content-script world)
    Everything Orbitabs adds is position:fixed, topmost, and fully removable —
-   the website's own content is never modified. */
+   the website's own content is never modified.
+
+   Dock design (per the labeled mock): four grey control boxes stacked on the
+   right — SHAPES · COLORS · PEN TOOL · TEXT — each opened from its rail icon,
+   with a labeled vertical rail to their right (dark pill labels reveal on
+   row hover) and a launcher square above it. */
 
 /* ── in-page overlay (markup-overlay.js build()) ── */
+/* Orbitabs design tokens — mirrors src/index.css DARK theme (the extension's
+   primary identity): near-black surfaces, neon-green accent, thin dark
+   borders, trapped-light inner glow. Scoped to the overlay root so the host
+   page's own :root tokens are never touched. */
 #orbitabs-markup-root {
   position: fixed;
   inset: 0;
   z-index: 2147483646;
+  /* The root is TRANSPARENT to hit-testing: only its own controls take
+     input. elementUnderPage() knocks out the canvas and expects the PAGE
+     element under the pointer — if the root itself intercepted the query,
+     every scroll-anchor walk would start at the overlay and capture an
+     empty scroller chain (marks would freeze while the site scrolls). */
+  pointer-events: none;
+  /* shell */
+  --ob-primary: #0a0a10;       /* #0A0A10 — page-level black, blue cast */
+  --ob-surface: #111111;       /* card fill (panels, rail, launcher) */
+  --ob-panel: #131316;         /* recessed panel interior */
+  --ob-muted: #151515;         /* elevated control fill (inputs, chips) */
+  --ob-border: #27272a;        /* thin borders */
+  --ob-accent: #8ab4f8;        /* Google dark-theme blue — active / CTA / focus (green removed) */
+  --ob-accent-dark: #2563eb;   /* pressed blue (canvas chrome on pages) */
+  --ob-ink-on-accent: #041e49; /* Google dark ink on blue fills */
+  --ob-text: #f5f5f5;          /* main text */
+  --ob-text-muted: #a1a1aa;    /* secondary text */
+  --ob-danger: #ef4444;        /* destructive */
+  --ob-glow: rgba(138, 180, 248, 0.4); /* signature trapped light — blue */
+  --ob-bloom: rgba(138, 180, 248, 0.55); /* box-bloom CORE (top-center) */
+  /* premium shadow ladder (dark) */
+  --ob-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --ob-shadow-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.55);
+}
+
+/* ── LIGHT THEME — toggled from the rail's 🌗 row (persisted in
+   orbi_markup_theme). Same token names, light values: the overlay CHROME
+   flips to white panels; the canvas (user ink), its selection chrome and
+   saved marks never change. The accent is GOOGLE BLUE in both themes
+   (green removed on request): #1A73E8 on white panels — same blue the
+   popup's light mode uses. ── */
+#orbitabs-markup-root.mk-light {
+  --ob-primary: #f4f4f5;
+  --ob-surface: #ffffff;
+  --ob-panel: #fafafa;
+  --ob-muted: #f0f0f2;
+  --ob-border: #d4d4d8;
+  --ob-accent: #1a73e8;
+  --ob-accent-dark: #1867bc;
+  --ob-ink-on-accent: #ffffff;
+  --ob-text: #18181b;
+  --ob-text-muted: #71717a;
+  --ob-danger: #dc2626;
+  --ob-glow: rgba(26, 115, 232, 0.22);
+  --ob-bloom: rgba(26, 115, 232, 0.42); /* box-bloom CORE (top-center) */
+  --ob-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.10);
+  --ob-shadow-lg: 0 4px 12px -2px rgba(0, 0, 0, 0.18);
+  /* pill tooltips + the text box were the only hardcoded dark fills */
+  --ob-tooltip-bg: rgba(255, 255, 255, 0.97);
+  --ob-input-bg: #ffffff;
 }
 
 #mk-canvas {
   position: absolute;
   inset: 0;
   cursor: crosshair;
+  pointer-events: auto; /* the root is none — the canvas must take input itself */
 }
 
+/* Erase mode: a RING (circle) cursor at the erase radius — replaces the old
+   'cell' cursor, which draws a PLUS and reads as "add" to users.
+   Inline PNG: Chrome doesn't support SVG cursors and Windows caps cursor
+   bitmaps at 32×32. Black band + white core = readable on light AND dark
+   pages. Fallback `default` so a failed image never falls back to a plus. */
 #mk-canvas.mk-erasing {
-  cursor: cell;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABXklEQVR42tWX4Y2DMAyFO8IJxAJMUDEBI3SUjJBNMkJG4McNgNQFUCdA1wU4PuRISUVPhYZL+iRLFXWenfjZhNPpQ3GerZ1NibXy7FBcZrNN09yVUpPWerLWLsZvnvEfPuIbDW1RFDeCDMMwgXEcp67rAuMZwAdf1sjJ7MbXbIadQY5BXNf1j+xSP5jlP3ycP2vhEK5twcuyvBpjll1BWlXV94tHe8GXNQAOuLYksQTv+37ZhdRV7ThBxVo44NqShCFrL/g76j67JOCUcvwtOOoGIgQPkoBTNPFcmCjXiW3nsT8thxOndMe6eJyTCC4q4PQ2typm63o49iDxN0gMaeMQrk7S54cAbk9foVDcwFnNLh6sN6ACgbccDyNVptpR0MSQMgfdoHip/FcCxHrssuQJJC9BchEmb8P0gyiHUZz8ZZT+dZzDhSSLK1nyS2kW1/IsPkyy+TTL5uP0EPwC/Bgp3wqUMEgAAAAASUVORK5CYII=") 16 16, default;
 }
 
-#mk-toolbar {
+/* ── dock: boxes column + rail group (right edge) ── */
+#mk-dock {
   position: fixed;
   top: 14px;
-  right: 14px;
+  right: 12px;
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  border-radius: 12px;
-  background: #17171b;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(168, 85, 247, 0.25);
-  /* narrow windows/pages: wrap to a second row instead of clipping the
-     swatches off-screen (10 colors + 12 buttons ≈ 620px natural width) */
-  max-width: calc(100vw - 28px);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  row-gap: 6px;
+  align-items: stretch;
+  gap: 10px;
+  pointer-events: none;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-#mk-toolbar button {
+#mk-dock > * {
+  pointer-events: auto;
+}
+
+#mk-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.mk-panel {
+  width: 158px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border); /* thin border — flat surface rule */
+  border-radius: 10px;
+  padding: 6px 7px 7px;
+  box-shadow: var(--ob-shadow-lg);
+}
+
+.mk-panel-title {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ob-text-muted);
+  margin-bottom: 5px;
+}
+
+.mk-panel-body {
+  /* recessed interior wearing the extension's SIGNATURE trapped light:
+     dark inset shadow + a controlled green inner glow (same recipe as the
+     popup's inner-glow bands, softened for a small tool body) */
+  background: var(--ob-panel);
+  border: 1px solid var(--ob-border);
+  border-radius: 7px;
+  padding: 6px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--ob-glow);
+}
+
+/* boxes open from their rail icon; only one visible at a time */
+.mk-box {
+  display: none;
+}
+
+.mk-box.mk-open {
+  display: block;
+}
+
+/* ── CONTROL BOXES (TEXT · COLORS · SHAPES · PEN) — the popup Settings
+   sections' FULL treatment (user: "jaise General me shadows hain" — the
+   General look = the gradient BLOOM + trapped glow + soft lift, so all
+   three layers land here too): a same-accent radial bloom rising from the
+   top-center (--ob-bloom core → --ob-glow mid → transparent edge), the
+   trapped inset glow, a blue-tinted hairline and the outer elevation.
+   Theme-aware: dark = blue bloom over #111, light = blue over white. ── */
+.mk-box.mk-open {
+  background-image:
+    radial-gradient(130% 100% at 50% -14%,
+      var(--ob-bloom) 0%,
+      color-mix(in srgb, var(--ob-glow) 60%, transparent) 40%,
+      color-mix(in srgb, var(--ob-glow) 22%, transparent) 72%,
+      transparent 100%);
+  border-color: color-mix(in srgb, var(--ob-accent) 30%, var(--ob-border));
+  box-shadow: inset 0 0 26px var(--ob-glow), var(--ob-shadow-lg);
+}
+
+/* shared button reset inside boxes + rail */
+.mk-panel button,
+.mk-rail-row > button,
+.mk-launcher {
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
+}
+
+/* keyboard focus — the popup's neon ring, scoped to overlay controls
+   (host pages keep their own focus styles — we only add ours) */
+.mk-panel button:focus-visible,
+.mk-panel input:focus-visible,
+.mk-panel select:focus-visible,
+.mk-rail-row > button:focus-visible,
+.mk-launcher:focus-visible,
+#mk-shape-picker button:focus-visible {
+  outline: 2px solid var(--ob-accent);
+  outline-offset: 1px;
+}
+
+/* ── SHAPES box: square · line · arrow / circle · triangle · star ── */
+.mk-shapes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+/* the appended COLOR row (every tool box carries the colors setting now)
+   spans the full grid width instead of becoming a grid cell */
+.mk-box-shapes .mk-mini-label,
+.mk-box-shapes .mk-swatches {
+  grid-column: 1 / -1;
+}
+
+.mk-shape-btn {
   height: 30px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #e2e8f0;
-  cursor: pointer;
-  padding: 0;
+  border-radius: 6px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text);
 }
 
-#mk-toolbar button svg {
-  width: 16px;
-  height: 16px;
+.mk-shape-btn svg {
+  width: 19px;
+  height: 19px;
 }
 
-#mk-toolbar button.mk-danger:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #fca5a5;
+.mk-shape-btn:hover {
+  background: #1d1d21;
+  border-color: #3f3f46;
 }
 
-#mk-toolbar button:hover {
-  background: rgba(255, 255, 255, 0.12);
+/* ── shared CONTROL state recipe (the popup's language):
+   resting = elevated muted fill + thin border · hover = lighten ·
+   ACTIVE = accent fill + accent ink (active pill / CTA rule) ── */
+.mk-shape-btn.mk-active {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
 }
 
-#mk-toolbar button.mk-active {
-  background: #3b82f6;
-  color: #fff;
+/* ── COLORS box: palette circles + ring, Recent row, ink row ── */
+.mk-colors-box {
+  display: flex;
+  flex-direction: column;
 }
 
 .mk-swatches {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  padding-right: 6px;
-  margin-right: 4px;
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* ink (TEXT color) row — second swatch group with a divider after it */
-.mk-ink-swatches {
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
+.mk-mini-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-text-muted);
+  margin: 6px 0 3px;
 }
 
-/* text-SIZE row (S / M / L) — third group, segmented text buttons */
-.mk-size-swatches {
-  gap: 2px;
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
+.mk-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.mk-size-btn {
-  font: 600 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #e2e8f0;
-  border-radius: 6px !important;
+.mk-swatch:hover {
+  border-color: rgba(255, 255, 255, 0.55);
 }
 
-.mk-size-btn[data-size='S'] { font-size: 9px; }
-.mk-size-btn[data-size='L'] { font-size: 12px; }
+.mk-swatch.mk-active {
+  outline: 2px solid var(--ob-accent);
+  outline-offset: 1px;
+}
 
-.mk-size-btn:hover { background: rgba(255, 255, 255, 0.14); }
-.mk-size-btn.mk-active { background: rgba(255, 255, 255, 0.22); }
+/* 🎨 any-color escape hatch — a ring (per the mock). NO !important on the
+   background: once the inline palette commits a color, the inline style
+   must win so the ring shows the current custom color. */
+.mk-swatch.mk-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ob-muted);
+  border: 3px solid var(--ob-accent-dark);
+}
 
+.mk-swatch.mk-custom:hover {
+  border-color: var(--ob-accent);
+}
+
+/* ── inline custom palette (the mock's DevTools-style picker) ──
+   SV area · hue slider · alpha slider · eyedropper · hex + % fields ── */
+.mk-palette {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.mk-palette.mk-open {
+  display: flex;
+}
+
+/* saturation/value square — the hue base layer is set inline by JS */
+.mk-pal-sv {
+  position: relative;
+  height: 82px;
+  border-radius: 6px;
+  cursor: crosshair;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.mk-pal-knob {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* eyedropper beside the stacked hue + alpha sliders (as in the mock) */
+.mk-pal-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mk-panel .mk-eyedrop {
+  width: 20px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text-muted);
+  flex: none;
+}
+
+.mk-eyedrop:hover {
+  background: #1d1d21;
+  color: var(--ob-text);
+}
+
+.mk-pal-sliders {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mk-pal-hue,
+.mk-pal-alpha {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+/* rainbow ramp — full saturation, full value */
+.mk-pal-hue {
+  background: linear-gradient(to right, #f00 0%, #ff0 16.66%, #0f0 33.33%, #0ff 50%, #00f 66.66%, #f0f 83.33%, #f00 100%);
+}
+
+/* alpha checker is painted inline by JS (it depends on the hue) */
+
+/* hex + opacity row — the mock's "Hex | FD0000 | 100 %" line */
+.mk-pal-chip {
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  font: 600 8px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text-muted);
+}
+
+.mk-pal-hex {
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  font: 600 10px ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color: var(--ob-text);
+  text-transform: uppercase;
+  padding: 0 5px;
+}
+
+.mk-pal-pct {
+  width: 34px;
+  height: 20px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  font: 600 9px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text);
+  text-align: center;
+}
+
+.mk-pal-sign {
+  font: 600 9px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text-muted);
+}
+
+/* "On this page" — collapsible swatch grid of the page's own colors */
+.mk-pal-page {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* `.mk-panel button` above is (0,1,1) — these selectors outrank it so the
+   chip look (bg/border/padding/space-between) is NOT stomped back to the
+   bare reset. Verified via elementFromStyle in the alignment probe. */
+.mk-panel .mk-pal-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  font: 600 8px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text-muted);
+  cursor: pointer;
+}
+
+.mk-pal-page-head svg {
+  transition: transform 0.15s;
+}
+
+.mk-pal-page.mk-collapsed .mk-pal-page-head svg {
+  transform: rotate(-90deg);
+}
+
+.mk-pal-page-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  max-height: 68px;
+  overflow-y: auto;
+}
+
+.mk-pal-page.mk-collapsed .mk-pal-page-grid {
+  display: none;
+}
+
+.mk-pal-page-grid .mk-swatch {
+  width: auto;
+  height: 14px;
+  border-radius: 3px;
+  justify-self: stretch;
+}
+
+/* ink (TEXT color) row — under the "Text color" mini label */
 .mk-ink-swatches .mk-swatch {
   width: 16px !important;
   height: 16px !important;
 }
 
 .mk-ink-swatches .mk-swatch.mk-ink-auto {
-  font: 700 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.08) !important;
+  font: 700 9px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text-muted);
+  background: var(--ob-muted) !important;
 }
 
 .mk-ink-swatches .mk-swatch.mk-ink-auto.mk-active {
-  border-color: #fff !important;
-  background: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: var(--ob-text);
 }
 
-.mk-swatch {
-  width: 18px !important;
-  height: 18px !important;
-  border-radius: 50% !important;
-  border: 2px solid transparent !important;
-  padding: 0 !important;
+/* ── PEN TOOL box: name above a light preview chip (stroke + caret) with
+     the width select beside it — per the mock ── */
+.mk-pen-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.mk-swatch.mk-active {
-  border-color: #fff !important;
-  background-clip: padding-box;
+.mk-pen-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
 }
 
-.mk-swatch:hover {
-  border-color: rgba(255, 255, 255, 0.55) !important;
+.mk-pen-name {
+  padding-left: 2px;
+  font: 600 8px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text-muted);
 }
 
-/* 🎨 any-color escape hatch — palette icon on a subdued chip */
-.mk-swatch.mk-custom {
+.mk-pen-tool.mk-active .mk-pen-name {
+  color: var(--ob-accent);
+  font-weight: 800;
+}
+
+.mk-pen-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mk-pen-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  color: var(--ob-text);
+}
+
+.mk-pen-tool.mk-active .mk-pen-chip {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+}
+
+.mk-pen-preview {
+  flex: 1;
+  height: 16px;
+}
+
+.mk-pen-caret {
+  display: flex;
+  align-items: center;
+  color: var(--ob-text-muted);
+}
+
+.mk-pen-tool.mk-active .mk-pen-caret {
+  color: var(--ob-ink-on-accent);
+}
+
+.mk-pen-width {
+  width: 34px;
+  height: 22px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  font: 600 9px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text);
+}
+
+/* ── TEXT box: font style · size (px + L/M/S) · align + valign · B/U/I ── */
+.mk-text-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mk-field-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ob-text-muted);
+  margin-top: 3px;
+}
+
+.mk-font-select {
+  width: 100%;
+  height: 22px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  font: 500 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text);
+}
+
+/* dropdown options must be readable too — Chrome follows the select's
+   palette only when the option is painted explicitly */
+.mk-panel select option {
+  background: var(--ob-muted);
+  color: var(--ob-text);
+}
+
+/* ── TEXT panel — WIDER than the other boxes (user request): the text
+   controls need a single-line layout. Measured math: a 158px panel leaves
+   only 128px of body content, but the font-size row (42% select + 3×24px
+   swatches ≈ 137px) and the alignment row (two 3×21px trios + gap = 151px)
+   both overflowed it — L/M/S wrapped and the valign trio hung out of the
+   panel. At 200px the body content is 170px: both rows fit with slack,
+   and every .mk-text-row below is additionally locked to nowrap. ── */
+.mk-panel.mk-box-text {
+  width: 200px;
+}
+
+.mk-text-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap; /* rows never wrap — a control shrinks/clips instead of spilling */
+}
+
+/* narrow px select beside the L/M/S group (the mock's "font size" row) */
+.mk-size-select {
+  width: 42%;
+  height: 22px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 5px;
+  font: 600 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-text);
+}
+
+.mk-text-row .mk-size-swatches {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  flex-wrap: nowrap; /* L M S must share ONE line */
+}
+
+/* light rounded containers holding the align + valign trios */
+.mk-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.mk-text-row .mk-btn-group {
+  flex: 1;
+  justify-content: space-around;
+  flex-wrap: nowrap; /* the trio stays one line inside the panel */
+}
+
+.mk-btn-group > button {
+  /* both trios share one 170px content row (the 200px TEXT panel) — 21px
+     buttons + nowrap keep the second group fully inside the panel
+     (measured, not guessed) */
+  width: 21px;
+  height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ob-text-muted);
+}
+
+.mk-btn-group > button:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.mk-btn-group > button.mk-active {
+  background: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+}
+
+/* B / U / I as separate squares + the line-spacing cycle button */
+.mk-style-row {
+  gap: 5px;
+}
+
+.mk-panel .mk-style-btn,
+.mk-panel .mk-space-btn {
+  width: 32px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text-muted);
+  font: 800 11px Georgia, "Times New Roman", serif;
+}
+
+.mk-panel .mk-style-btn:hover,
+.mk-panel .mk-space-btn:hover {
+  background: #1d1d21;
+  color: var(--ob-text);
+}
+
+.mk-style-btn.mk-active,
+.mk-space-btn.mk-active {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+}
+
+.mk-style-underline { text-decoration: underline; }
+.mk-style-italic { font-style: italic; }
+
+/* text-SIZE buttons (S / M / L) — live on the selected/typed mark */
+.mk-size-swatches {
+  gap: 3px;
+}
+
+.mk-panel .mk-size-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #94a3b8;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: var(--ob-muted);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text-muted);
+  border-radius: 4px;
+  width: 24px;
+  height: 20px;
+  font: 600 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-.mk-swatch.mk-custom:hover {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.16) !important;
+.mk-panel .mk-size-btn:hover {
+  background: #1d1d21;
+  color: var(--ob-text);
 }
 
-.mk-status {
-  min-width: 52px;
-  text-align: center;
-  color: #4ade80;
-  font: 600 11px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+.mk-size-btn.mk-active {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
 }
 
-#mk-hint {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 14px;
-  border-radius: 9999px;
-  background: rgba(15, 23, 42, 0.9);
-  color: #cbd5e1;
-  font: 500 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  pointer-events: none;
+.mk-size-btn[data-size='S'] { font-size: 9px; font-weight: 600; }
+.mk-size-btn[data-size='M'] { font-weight: 700; }
+.mk-size-btn[data-size='L'] { font-size: 12px; font-weight: 800; }
+
+/* ── rail group: launcher square + labeled vertical rail ── */
+.mk-rail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  /* rows overflow the 44px rail with their pill labels — reserve that
+     label zone here so the dock hugs the viewport edge without clipping */
+  width: 112px;
 }
 
-#mk-toast {
-  position: fixed;
-  bottom: 52px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 14px;
-  border-radius: 9999px;
-  background: #3b82f6;
-  color: #fff;
-  font: 600 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+.mk-launcher {
+  /* nudge to the 44px rail's centerline — the 40px square is left-aligned
+     in the flex-start rail group otherwise (icon reads 2px off) */
+  margin-left: 2px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text);
+  box-shadow: var(--ob-shadow-lg);
 }
 
-#mk-text-input {
+/* the top square shows the Orbitabs "O" mark — wears the accent blue
+   (the popup's brand ink on dark surfaces) */
+.mk-launcher .mk-o {
+  font: 800 19px/1 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ob-accent);
+}
+
+.mk-launcher:hover {
+  border-color: color-mix(in srgb, var(--ob-accent) 45%, transparent);
+  color: var(--ob-accent);
+}
+
+/* the O square is the dock's DRAG HANDLE — grab cursor, no native drag,
+   no text selection, and touch drags work too (touch-action none) */
+.mk-launcher {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#mk-dock.mk-dragging .mk-launcher {
+  cursor: grabbing;
+}
+
+#mk-rail {
+  width: 44px;
+  flex: 1;
+  min-height: 0;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  border-radius: 12px;
+  padding: 5px 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--ob-shadow-lg);
+}
+
+.mk-rail-row {
+  position: relative; /* anchors the absolutely-positioned hover pill */
+  display: flex;
+  align-items: center;
+}
+
+.mk-rail-row > button {
+  /* the pill overlays the reserved label zone to the rail's right (it is
+     absolutely positioned); without `flex: none` the icon button would
+     shrink to the icon's 15px min-content and drift left of center */
+  flex: none;
+  width: 36px;
+  height: 28px;
+  margin: 0 4px;
+  border-radius: 7px;
+  color: var(--ob-text-muted);
+}
+
+.mk-rail-row > button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mk-rail-row > button:hover {
+  /* dark rail — hover LIGHTENS (a dark wash on dark would be invisible) */
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ob-text);
+}
+
+.mk-rail-row > button.mk-active {
+  background: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+}
+
+/* rail icon whose box is currently open — accent-tinted, inset ring
+   (the popup's open/active state language); color-mix keeps it correct
+   in BOTH overlay themes (blue at 10% / 55%) */
+.mk-rail-row > button.mk-box-open {
+  background: color-mix(in srgb, var(--ob-accent) 10%, transparent);
+  color: var(--ob-accent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ob-accent) 55%, transparent);
+}
+
+#mk-rail button.mk-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--ob-danger);
+}
+
+/* stretch of strip before the bottom bin row — grows so the rail runs
+   as tall as the boxes column (Clear sits at the rail's foot) */
+.mk-rail-gap {
+  flex: 1;
+  min-height: 16px;
+}
+
+/* dark pill label — HIDDEN at rest, reveals on row hover (or keyboard
+   focus) like a tooltip, hanging off the rail's right edge over the
+   reserved label zone. Absolutely positioned so revealing never shifts
+   the icon layout; pointer-events: none keeps it transparent to input. */
+.mk-pill {
   position: absolute;
-  min-width: 200px;
-  min-height: 48px;
-  padding: 6px 8px;
-  border: 2px solid #3b82f6;
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.95);
-  color: #f8fafc;
-  font: 500 14px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  resize: none;
-  outline: none;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  z-index: 1;
+  left: calc(100% - 7px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  z-index: 2;
+  min-width: 62px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--ob-primary);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text);
+  font: 600 10px/1 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
 }
 
-/* ── sticky shape picker (visible while a sticky note is selected) ── */
+.mk-rail-row:hover .mk-pill,
+.mk-rail-row:focus-within .mk-pill {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-pill { transition: none; }
+}
+
+/* minimized: only the launcher square remains, tucked into the corner */
+#mk-dock.mk-collapsed #mk-panels,
+#mk-dock.mk-collapsed #mk-rail {
+  display: none;
+}
+
+#mk-dock.mk-collapsed .mk-rail-group {
+  width: 40px;
+}
+
+/* ── sticky shape picker (contextual; visible while a sticky is selected) ── */
 #mk-shape-picker {
-  position: fixed;
-  top: 56px;
-  right: 14px;
   display: none;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 5px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
   border-radius: 10px;
-  background: #17171b;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(168, 85, 247, 0.25);
-  color: #94a3b8;
-  font: 600 11px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 6px 8px;
+  box-shadow: var(--ob-shadow-lg);
+  color: var(--ob-text-muted);
+  font: 700 9px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 #mk-shape-picker.mk-visible {
@@ -224,22 +906,115 @@
   align-items: center;
   justify-content: center;
   width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #e2e8f0;
+  height: 22px;
+  border: 1px solid var(--ob-border);
+  border-radius: 6px;
+  background: var(--ob-muted);
+  color: var(--ob-text-muted);
   cursor: pointer;
   padding: 0;
 }
 
 #mk-shape-picker button:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: #1d1d21;
+  border-color: #3f3f46;
+  color: var(--ob-text);
 }
 
 #mk-shape-picker button.mk-active {
-  background: #3b82f6;
-  color: #fff;
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+}
+
+/* ── hint / toast / text input / launcher chip (unchanged behavior) ── */
+#mk-hint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--ob-tooltip-bg, rgba(10, 10, 16, 0.94));
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text-muted);
+  font: 500 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  pointer-events: none;
+}
+
+#mk-toast {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--ob-accent);
+  color: var(--ob-ink-on-accent);
+  font: 600 12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ob-accent) 35%, transparent);
+}
+
+.mk-status {
+  text-align: center;
+  color: var(--ob-accent);
+  font: 600 10px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.mk-status:empty {
+  display: none;
+}
+
+/* ── TEXT COMPOSER (the note box) — the overlay-PANEL language instead of
+   a raw neon cage: flat surface fill + 1px thin border at REST, the
+   signature trapped green light living INSIDE the box (inset glow — same
+   idea as every other lit surface), and the accent edge appearing exactly
+   when composing (focus). Entrance reuses mkPanelIn so the composer grows
+   in like the other boxes. ── */
+#mk-text-input {
+  position: absolute;
+  pointer-events: auto; /* root-level child of a pointer-events:none root */
+  /* Wider writing area (was min-width 200px): a 280px box keeps longer
+     notes readable while the viewport clamp (max-width) guarantees the box
+     never runs off-screen on small windows — openTextArea additionally
+     clamps the LEFT edge after measuring, so every position aligns. */
+  width: 280px;
+  max-width: calc(100vw - 16px);
+  min-height: 52px;
+  padding: 9px 11px;
+  border: 1px solid var(--ob-border);
+  border-radius: 12px;
+  background: var(--ob-input-bg, rgba(10, 10, 16, 0.96));
+  color: var(--ob-text);
+  font: 500 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  resize: none;
+  outline: none;
+  box-shadow:
+    inset 0 0 14px var(--ob-glow),      /* trapped light — the signature */
+    inset 0 1px 0 rgba(255, 255, 255, 0.05), /* top lip — reads as a real inset well */
+    var(--ob-shadow-lg);                /* one soft drop lifts it off the page */
+  transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+  animation: mkPanelIn 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  z-index: 1;
+}
+
+/* Focus = the accent edge lights up while you type — the only moment the
+   composer wears color, so it never shouts at rest (spec: controlled glow,
+   never a neon rectangle). The ring keeps keyboard focus visible. */
+#mk-text-input:focus {
+  border-color: var(--ob-accent);
+  box-shadow:
+    inset 0 0 16px var(--ob-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 3px color-mix(in srgb, var(--ob-accent) 22%, transparent),
+    var(--ob-shadow-lg);
+}
+
+/* Hint text + text selection join the overlay's muted/accent language. */
+#mk-text-input::placeholder { color: var(--ob-text-muted); }
+#mk-text-input::selection {
+  background: color-mix(in srgb, var(--ob-accent) 30%, transparent);
 }
 
 /* ── launcher chip (worker/popup-triggered path) ── */
@@ -254,9 +1029,126 @@
   padding: 8px 14px;
   border: none;
   border-radius: 9999px;
-  background: #3b82f6;
-  color: #fff;
+  background: #8ab4f8;
+  color: #041e49;
   font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 4px 14px rgba(138, 180, 248, 0.35);
   cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SOFT MOTION — same language as the popup (Material-style curves), but
+   every keyframe is `mk-` namespaced and transform/opacity ONLY, so the
+   overlay never leaks animation onto the host page and never triggers
+   layout. Content scripts inject into arbitrary sites, so collision-safety
+   and compositor-only properties are non-negotiable.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Rail row + launcher + status: gentle rise-in when the overlay opens
+   (decelerate — fast out, soft landing). Stagger via --mk-d. */
+@keyframes mkRiseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Panels / boxes / palette: fade + tiny scale-in (the emphasized entrance
+   the popup uses for dialogs). transform-origin stays at the button so the
+   box grows out of its launcher, not from its own center. */
+@keyframes mkPanelIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Swatch / shape / pen-chip confirm pop — the little bounce when a color
+   or tool is picked. Subtle (1 → 1.18 → 1), never a jiggle. */
+@keyframes mkPop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Status flash (flash("Saved ✓")): slide-up + fade, like the popup toast. */
+@keyframes mkFlashIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.mk-rail-group,
+.mk-launcher {
+  animation: mkRiseIn 280ms cubic-bezier(0, 0, 0, 1) both;
+}
+.mk-launcher { animation-delay: 40ms; }
+/* flash(): the JS adds/re-triggers .mk-flash so two flashes in a row both
+   replay the slide-up (a pure :not(:empty) rule could not restart). */
+.mk-status.mk-flash { animation: mkFlashIn 260ms cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+
+/* Boxes + inline palette grow out of their launcher. */
+.mk-box.mk-open,
+.mk-palette.mk-open {
+  animation: mkPanelIn 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  transform-origin: top center;
+}
+
+/* Interactive controls: press-feedback on transform only (150ms standard),
+   matching the popup's buttons. Applies to every overlay control that
+   already exists + anything added later via these shared classes. */
+.mk-panel button,
+.mk-rail-row > button,
+.mk-launcher,
+.mk-swatch,
+.mk-shape-btn,
+.mk-pen-chip,
+.mk-size-btn,
+.mk-style-btn,
+.mk-space-btn,
+.mk-btn-group > button {
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1),
+              background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+              border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+              color 150ms cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.mk-panel button:active,
+.mk-rail-row > button:active,
+.mk-launcher:active,
+.mk-swatch:active,
+.mk-shape-btn:active,
+.mk-pen-chip:active,
+.mk-size-btn:active,
+.mk-style-btn:active,
+.mk-space-btn:active,
+.mk-btn-group > button:active {
+  transform: scale(0.92);
+}
+
+/* The pop JS toggles this class for one animation cycle to confirm a
+   selection (color swatch, shape, pen chip, active tool). */
+.mk-pop { animation: mkPop 220ms cubic-bezier(0.05, 0.7, 0.1, 1); }
+
+/* ── Reduced motion: honor the OS setting — everything snaps to its end
+   state. Content scripts must never force motion on a user who opted out.
+   ── */
+@media (prefers-reduced-motion: reduce) {
+  .mk-rail-group,
+  .mk-launcher,
+  .mk-status.mk-flash,
+  .mk-box.mk-open,
+  .mk-palette.mk-open,
+  #mk-text-input,
+  .mk-pop {
+    animation: none !important;
+  }
+  .mk-panel button,
+  .mk-rail-row > button,
+  .mk-launcher,
+  .mk-swatch,
+  .mk-shape-btn,
+  .mk-pen-chip,
+  .mk-size-btn,
+  .mk-style-btn,
+  .mk-space-btn,
+  #mk-text-input,
+  .mk-btn-group > button {
+    transition: none !important;
+  }
 }

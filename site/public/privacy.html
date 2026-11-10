@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orbitabs — Privacy Policy</title>
+    <meta
+      name="description"
+      content="Orbitabs Privacy Policy — what stays on your device, what leaves it, and how to delete it."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- Poiret One Font for Logo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800;900&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #050505;
+        color: #fff;
+        overflow-x: hidden;
+      }
+      ::selection {
+        background-color: #fff;
+        color: #000;
+      }
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      html,
+      body {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      nav {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .mobile-menu {
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s ease;
+      }
+      .mobile-menu.hidden-menu {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .hamburger span {
+        transition:
+          transform 0.3s ease,
+          opacity 0.3s ease;
+      }
+      .hamburger.open span:nth-child(1) {
+        transform: translateY(8px) rotate(45deg);
+      }
+      .hamburger.open span:nth-child(2) {
+        opacity: 0;
+      }
+      .hamburger.open span:nth-child(3) {
+        transform: translateY(-8px) rotate(-45deg);
+      }
+
+      .kbd {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-bottom: 3px solid #111;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-family: "Inter", sans-serif;
+        font-size: 0.65rem;
+        color: #ccc;
+        display: inline-block;
+        font-weight: 500;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85em;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        padding: 1px 6px;
+        color: #a9c0ff;
+        white-space: nowrap;
+      }
+
+      /* ========== WIDE CONTAINERS ========== */
+      .wide-container {
+        width: 100%;
+        max-width: min(1800px, 98vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 24px);
+        padding-right: clamp(8px, 1.5vw, 24px);
+      }
+      .wide-container-md {
+        width: 100%;
+        max-width: min(1600px, 97vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 20px);
+        padding-right: clamp(8px, 1.5vw, 20px);
+      }
+      .wide-container-sm {
+        width: 100%;
+        max-width: min(1400px, 96vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(8px, 1.5vw, 16px);
+        padding-right: clamp(8px, 1.5vw, 16px);
+      }
+
+      .prose-body p {
+        color: #9a9aa5;
+      }
+      .prose-body strong {
+        color: #fff;
+        font-weight: 600;
+      }
+      .prose-body a {
+        color: #fff;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: rgba(255, 255, 255, 0.3);
+      }
+      .prose-body a:hover {
+        text-decoration-color: #fff;
+      }
+
+      /* custom bullet list */
+      .policy-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .policy-list li {
+        position: relative;
+        padding-left: 22px;
+        margin-bottom: 10px;
+        color: #9a9aa5;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+      .policy-list li::before {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 0.7em;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #7c9cff;
+        opacity: 0.85;
+      }
+      .policy-list.never li::before {
+        content: "✕";
+        background: none;
+        color: #ff6b6b;
+        font-size: 11px;
+        font-weight: 800;
+        width: auto;
+        height: auto;
+        top: 0.1em;
+        left: 2px;
+      }
+      .policy-list li strong {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .feature-number {
+        transition:
+          color 0.3s ease,
+          opacity 0.3s ease;
+      }
+
+      @media (max-width: 560px) {
+        .policy-list li {
+          font-size: 13.5px;
+        }
+      }
+    </style>
+  </head>
+  <body class="relative min-h-screen flex flex-col antialiased">
+    <!-- ==================== BACKGROUND ==================== -->
+    <div class="fixed inset-0 -z-20 overflow-hidden">
+      <img
+        src="background.jpg"
+        alt=""
+        class="w-full h-full object-cover opacity-50 grayscale"
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/70 to-[#050505]"
+      ></div>
+    </div>
+
+    <!-- ==================== NAVBAR ==================== -->
+    <nav
+      class="fixed w-full top-0 z-50 flex justify-between items-center px-3 md:px-6 py-2 md:py-4 text-sm font-light text-gray-300 bg-black/30 backdrop-blur-md border-b border-white/5 transition-all duration-300"
+    >
+      <!-- NEW LOGO DESIGN -->
+      <a href="index.html" aria-label="Orbitabs home" class="flex items-center group"><img src="orbitabs-wordmark.png" alt="Orbitabs" class="h-8 sm:h-10 md:h-12 w-auto object-contain" /></a>
+      
+      <div class="hidden md:flex gap-8 text-[12px] uppercase tracking-widest">
+        <a href="index.html#features" class="hover:text-white transition-colors duration-300">Features</a>
+        <a href="index.html#how-it-works" class="hover:text-white transition-colors duration-300">How it works</a>
+        <a href="privacy.html" class="text-white transition-colors duration-300">Privacy</a>
+        <a href="index.html#faq" class="hover:text-white transition-colors duration-300">FAQ</a>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a
+          href="#"
+          class="hidden sm:inline-block bg-white text-black px-3 sm:px-5 py-2 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-gray-200 hover:scale-105 transition-all duration-300"
+          >Add to Chrome — free</a
+        >
+        <button
+          id="menu-btn"
+          class="hamburger md:hidden w-11 h-11 flex flex-col items-center justify-center gap-1.5 p-1"
+          aria-label="Menu"
+        >
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+          <span class="w-5 h-0.5 bg-white rounded"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div
+      id="mobile-menu"
+      class="mobile-menu hidden-menu md:hidden fixed inset-0 top-[61px] bg-black/98 backdrop-blur-lg z-40 flex flex-col items-center justify-center gap-6 uppercase tracking-widest text-sm"
+    >
+      <a href="index.html#features" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">Features</a>
+      <a href="index.html#how-it-works" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">How it works</a>
+      <a href="privacy.html" class="mobile-link py-2 px-4 text-white transition-colors">Privacy</a>
+      <a href="index.html#faq" class="mobile-link py-2 px-4 text-gray-300 hover:text-white transition-colors">FAQ</a>
+      <a href="#" class="mt-4 bg-white text-black px-8 py-3 rounded-full text-xs font-semibold">Add to Chrome — free</a>
+    </div>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="relative z-10 w-full pt-28 md:pt-32 pb-24">
+      <!-- Header -->
+      <header class="wide-container-md mb-12 sm:mb-16 reveal">
+        <div class="max-w-[820px] mx-auto">
+          <a
+            href="index.html"
+            class="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors mb-8 uppercase tracking-widest"
+          >
+            ← Orbitabs home
+          </a>
+
+          <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-4">
+            Privacy
+          </p>
+
+          <h1
+            class="text-4xl sm:text-5xl md:text-7xl font-light tracking-tighter leading-[0.95] mb-6 text-white"
+          >
+            Privacy Policy
+          </h1>
+
+          <div
+            class="text-xs sm:text-sm text-gray-500 leading-relaxed mb-8 flex flex-col gap-1.5"
+          >
+            <p>
+              <strong class="text-gray-300 font-semibold"
+                >Effective date:</strong
+              >
+              October 17, 2026
+            </p>
+            <p>
+              Applies to the Orbitabs Chrome extension (Manifest V3) and its
+              backend service (hosted Cloudflare Worker + D1; the Express +
+              MongoDB build is the self-hosted alternative — same API, same
+              rules). <a href="dashboard.html" class="text-[#7c9cff] underline underline-offset-2 hover:text-white">Open the Orbitabs web dashboard</a>. · Web dashboard
+            </p>
+          </div>
+
+          <div
+            class="glass rounded-2xl p-5 sm:p-7 border-l-2 border-l-[#7c9cff]"
+          >
+            <p class="text-sm text-gray-400 leading-relaxed">
+              Orbitabs is built <strong class="text-white">local-first</strong>:
+              your browsing sessions live in your own browser, and everything
+              works fully without an account. This policy lists exactly what is
+              stored, what (if anything) leaves your device, and how to delete
+              it.
+              <strong class="text-white"
+                >If it isn't true of the code, it isn't here.</strong
+              >
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Sections -->
+      <div class="wide-container-md">
+        <div class="max-w-[820px] mx-auto border-t border-white/10">
+          <!-- 01 -->
+          <section
+            id="s1"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >01</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  What stays ON your device (default)
+                </h2>
+                <p class="text-sm mb-4">
+                  Everything below is stored in
+                  <code>chrome.storage.local</code> inside your browser and is
+                  never transmitted anywhere unless you sign in AND explicitly
+                  turn on cloud sync (section 3):
+                </p>
+                <ul class="policy-list mb-4">
+                  <li>
+                    Sessions you save: tab URLs, tab titles, window layout,
+                    tab-group names/colors/collapsed state, pinned/active flags.
+                  </li>
+                  <li>
+                    Live Backup (auto-save) snapshots and recovery points used
+                    for crash recovery.
+                  </li>
+                  <li>
+                    Settings (retention window, toggles, feature switches).
+                  </li>
+                  <li>
+                    Markup annotations (drawings, highlights, notes) keyed by
+                    page URL.
+                  </li>
+                  <li>
+                    Trash items — automatically and permanently purged after 30
+                    days (configurable to 7).
+                  </li>
+                </ul>
+                <p class="text-sm">
+                  Nothing here is readable by any website. Orbitabs never reads
+                  page content; the markup overlay only stores annotation data
+                  and never modifies the pages themselves.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02 -->
+          <section
+            id="s2"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >02</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Account data (only if YOU create one)
+                </h2>
+                <p class="text-sm mb-4">
+                  Signing in is never required. If you choose to create one:
+                </p>
+
+                <div
+                  class="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] mb-5"
+                >
+                  <table class="w-full text-sm min-w-[620px] border-collapse">
+                    <thead>
+                      <tr class="bg-white/[0.04]">
+                        <th
+                          class="text-left p-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold border-b border-white/10 whitespace-nowrap"
+                        >
+                          Data
+                        </th>
+                        <th
+                          class="text-left p-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold border-b border-white/10 whitespace-nowrap"
+                        >
+                          Purpose
+                        </th>
+                        <th
+                          class="text-left p-4 text-[11px] uppercase tracking-widest text-gray-400 font-semibold border-b border-white/10 whitespace-nowrap"
+                        >
+                          Where
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                      <tr>
+                        <td
+                          class="p-4 text-white font-medium align-top w-[26%]"
+                        >
+                          Name, email address
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Identify your account; send your verification link
+                        </td>
+                        <td class="p-4 text-gray-400 align-top w-[20%]">
+                          Our backend database
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4 text-white font-medium align-top">
+                          Password
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Stored hashed — bcrypt (self-host build) /
+                          PBKDF2-SHA256, 100k iterations (hosted service) —
+                          never in plain text
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Our backend database
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4 text-white font-medium align-top">
+                          Verification token
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Confirms you own the email (expires in 1 hour)
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Our backend database, deleted after use
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4 text-white font-medium align-top">
+                          Password-reset token
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Lets you choose a new password (single-use, expires in
+                          30 minutes)
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Our backend database, deleted after use
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4 text-white font-medium align-top">
+                          Refresh token (one per device)
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Keeps you signed in without re-entering your password:
+                          30-day sliding session, stored hashed, replaced on
+                          every use (a spent copy is rejected), removed at
+                          sign-out and account deletion
+                        </td>
+                        <td class="p-4 text-gray-400 align-top">
+                          Our backend database
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <p class="text-sm">
+                  We send exactly three types of email: the account-verification
+                  message, the password-reset message (only when you request
+                  it), and — only if you buy or cancel a paid plan — the
+                  plan-change confirmation (§7). No newsletters, no marketing,
+                  no tracking pixels.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 03 -->
+          <section
+            id="s3"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >03</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Cloud sync data (off by default)
+                </h2>
+                <p class="text-sm mb-4">
+                  Cloud sync requires both an account and the toggle in Settings
+                  → Privacy &amp; Data. When enabled:
+                </p>
+                <ul class="policy-list">
+                  <li>
+                    <strong>What is uploaded:</strong> your saved sessions and
+                    Live Backup (auto-save) snapshot — tab URLs, tab titles, and
+                    window/tab-group structure. (Trashed session content is
+                    never uploaded.)
+                  </li>
+                  <li>
+                    <strong>Deletion marks only:</strong> deleting a session on
+                    one device shares only its id and deletion time (a
+                    tombstone), so your other devices move their copies to their
+                    trash too; restoring lifts the mark the same way. Deleted
+                    session content never travels.
+                  </li>
+                  <li>
+                    <strong>Version snapshots (optional feature):</strong>
+                    before each synced edit, the server keeps that session's
+                    previous state so you can roll back from History… (last 3
+                    states on Free, 20 on Pro). Snapshots live with your account
+                    and are deleted with the session or the account.
+                  </li>
+                  <li>
+                    <strong>Share links (only when YOU create one):</strong>
+                    sharing freezes a copy of one session (name, tabs, groups,
+                    tags, note) behind an unguessable link valid 30 days. Anyone
+                    holding the link can import that copy into their own account
+                    — nothing more. A share link never reveals your email or
+                    identity, can never change or delete anything of yours, dies
+                    when you re-share or delete the session, and carries a
+                    snapshot (later edits to your copy are not exposed).
+                  </li>
+                  <li>
+                    <strong>Plan limit:</strong> the free plan cloud-syncs up to
+                    100 saved sessions (enforced server-side; sessions beyond
+                    the limit stay on your device and keep working — local
+                    storage is never capped). No plan is sold today — see
+                    section 7.
+                  </li>
+                  <li>
+                    <strong>Why:</strong> so your sessions are recoverable from
+                    your account on your other devices.
+                  </li>
+                  <li>
+                    <strong>Where:</strong> our own backend (hosted: Cloudflare
+                    Worker + database D1; self-hosted option: Express +
+                    MongoDB), tied to your account id.
+                  </li>
+                  <li>
+                    <strong>Controls:</strong> Local-only mode in Settings
+                    hard-disables all network calls, including sync. Sign out
+                    any time from Settings → Account.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 04 -->
+          <section
+            id="s4"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >04</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  What we NEVER do
+                </h2>
+                <ul class="policy-list never mb-4">
+                  <li>
+                    No analytics, no trackers, no advertising, no third-party
+                    SDKs.
+                  </li>
+                  <li>
+                    No selling, sharing, or renting of data — to anyone, for any
+                    purpose.
+                  </li>
+                  <li>No cookies or fingerprinting on extension pages.</li>
+                  <li>No reading of your page content for any purpose.</li>
+                  <li>
+                    No changes to tabs you didn't act on — Orbitabs never
+                    reorders, groups, or closes tabs by itself.
+                  </li>
+                </ul>
+                <p class="text-sm mb-5">
+                  The only network connections the extension ever makes are to
+                  its own backend, and only when an account feature you enabled
+                  requires it.
+                </p>
+
+                <div
+                  class="glass rounded-2xl p-5 sm:p-6 border-l-2 border-l-green-400/60"
+                >
+                  <span
+                    class="block text-[10px] font-extrabold uppercase tracking-widest text-green-400 mb-2"
+                    >Server-side diagnostics — the one measurement that
+                    exists</span
+                  >
+                  <p class="text-sm text-gray-400 leading-relaxed">
+                    The backend logs aggregate service health — request counts,
+                    response codes, latency and error rates — so outages and
+                    sync failures can be detected and fixed. These are ordinary
+                    server operational logs:
+                    <strong class="text-white"
+                      >no page content, no tab URLs, no analytics
+                      identifiers</strong
+                    >, and nothing that follows you across sites. The extension
+                    itself performs no analytics of any kind.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 05 -->
+          <section
+            id="s5"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >05</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  How to delete everything
+                </h2>
+                <ul class="policy-list">
+                  <li>
+                    <strong>Local data (instant, no account):</strong> Settings
+                    → Privacy &amp; Data → Delete all local data.
+                  </li>
+                  <li>
+                    <strong>Cloud account + cloud data:</strong> Settings →
+                    Account / Sync → Delete account &amp; cloud data (password
+                    confirmation required). Permanently removes your account and
+                    every cloud session.
+                  </li>
+                  <li>
+                    <strong>Trash:</strong> deleted sessions are held for 30
+                    days (or 7, if configured), then purged automatically.
+                  </li>
+                  <li>
+                    <strong>Uninstalling</strong> the extension removes all
+                    local data from Chrome.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 06 -->
+          <section
+            id="s6"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >06</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Security
+                </h2>
+                <ul class="policy-list">
+                  <li>
+                    <strong>Passwords:</strong> bcrypt hashing (cost factor 10)
+                    on the self-host build; PBKDF2-SHA256 with 100,000
+                    iterations on the hosted service.
+                  </li>
+                  <li>
+                    <strong>API access:</strong> signed JWTs (7-day expiry) plus
+                    rotating refresh tokens (30 days, one per device, stored
+                    hashed; a replayed spent token is rejected), rate-limited
+                    authentication (25 requests / 15 minutes / IP), explicit
+                    CORS origin allow-list, baseline security headers, HTTPS
+                    support with optional HTTP→HTTPS enforcement and HSTS.
+                  </li>
+                  <li>
+                    <strong>Free-plan sync limits</strong> and every write rule
+                    are enforced on the server — the extension never decides its
+                    own permissions.
+                  </li>
+                  <li>
+                    <strong>Deleted accounts are invalid immediately:</strong> a
+                    deleted account's tokens are rejected and all of its cloud
+                    rows are removed — sessions, deletion marks and refresh
+                    tokens alike.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 07 -->
+          <section
+            id="s7"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >07</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Payments &amp; plans
+                </h2>
+                <p class="text-sm mb-4">
+                  Today nothing is sold. Every feature — including cloud sync
+                  within the free-plan limit above — is free. Orbitabs contains
+                  no payment form and never asks for card details.
+                </p>
+                <p class="text-sm mb-4">
+                  A paid "Pro" plan (unlimited sync) is planned, not launched.
+                  When it launches, the purchase completes on our own checkout
+                  page (never inside the extension), sold by the developer of
+                  Orbitabs — [SELLER LEGAL NAME — fill in before launch] — not
+                  by Google or the Chrome Web Store, with price, renewal terms
+                  and a refund policy published here and disclosed in the Chrome
+                  Web Store listing before any purchase. Core save/restore
+                  functionality will never be behind a paywall.
+                </p>
+                <p class="text-sm">
+                  <strong>Refund policy (standing commitment):</strong> full
+                  refund on request within 14 days of any payment, no questions
+                  asked — email
+                  <a href="mailto:orbitabsnoreply@gmail.com"
+                    >orbitabsnoreply@gmail.com</a
+                  >
+                  from the account email.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 08 -->
+          <section
+            id="s8"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >08</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Children
+                </h2>
+                <p class="text-sm">
+                  Orbitabs is a general-purpose productivity tool and is not
+                  directed at children under 13. We do not knowingly collect
+                  data from children.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 09 -->
+          <section
+            id="s9"
+            class="py-10 sm:py-12 border-b border-white/10 reveal"
+          >
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >09</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Changes to this policy
+                </h2>
+                <p class="text-sm">
+                  Any change is published at this same address and reflected in
+                  the Chrome Web Store listing at the time of the corresponding
+                  extension release. The effective date always reflects the
+                  current version.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 10 -->
+          <section id="s10" class="py-10 sm:py-12 reveal">
+            <div class="flex items-start gap-4 sm:gap-6">
+              <span
+                class="feature-number text-xs font-mono text-gray-600 opacity-50 mt-1.5 shrink-0"
+                >10</span
+              >
+              <div class="flex-1 min-w-0 prose-body">
+                <h2
+                  class="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight"
+                >
+                  Contact
+                </h2>
+                <p class="text-sm">
+                  Questions or data requests:
+                  <a href="mailto:orbitabsnoreply@gmail.com"
+                    >orbitabsnoreply@gmail.com</a
+                  >
+                  — we can delete your account and associated cloud data on
+                  request.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Version note -->
+          <div class="pt-8 pb-2">
+            <p class="text-[11px] text-gray-600 tracking-wide">
+              Version 1.1 · Source of truth: <code>PRIVACY_POLICY.md</code> in
+              the Orbitabs repository.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer
+      class="relative w-full overflow-hidden z-10 border-t border-white/10"
+    >
+      <div
+        class="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[200px] bg-white/[0.04] blur-[100px] rounded-full pointer-events-none"
+      ></div>
+
+      <div class="relative z-10 wide-container-md pt-14 sm:pt-20 pb-10">
+        <div
+          class="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-10 pb-10 sm:pb-12 border-b border-white/10"
+        >
+          <!-- Brand column with NEW LOGO -->
+          <div class="col-span-2 md:col-span-4 flex flex-col gap-5">
+            <a href="index.html" aria-label="Orbitabs home" class="flex items-center mb-1"><img src="orbitabs-wordmark.png" alt="Orbitabs" class="h-10 sm:h-12 w-auto object-contain" /></a>
+            <p class="text-xs sm:text-[13px] text-gray-400 leading-relaxed max-w-[280px]">Save your Chrome tabs, groups and windows — and get them back exactly. Local-first, no account required.</p>
+            
+            <div class="inline-flex items-center gap-2 text-[10px] text-gray-400 glass rounded-full px-3 py-1.5 w-fit">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+              Local-first · No trackers
+            </div>
+
+            <a href="#" class="inline-flex items-center justify-center gap-2 bg-white text-black px-5 py-2.5 rounded-full text-xs font-semibold hover:bg-gray-200 hover:scale-[1.03] transition-all duration-300 w-fit mt-1">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v12" />
+                <path d="m7 11 5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+              Add to Chrome — free
+            </a>
+          </div>
+
+          <!-- Product -->
+          <div class="col-span-1 md:col-span-2 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Product</h4>
+            <ul class="flex flex-col gap-3 text-xs sm:text-[13px] text-gray-400">
+              <li><a href="index.html#features" class="hover:text-white transition-colors">Features</a></li>
+              <li><a href="index.html#how-it-works" class="hover:text-white transition-colors">How it works</a></li>
+              <li><a href="index.html#features" class="hover:text-white transition-colors">Organizer</a></li>
+              <li><a href="#" class="hover:text-white transition-colors">Dashboard</a></li>
+            </ul>
+          </div>
+
+          <!-- Resources -->
+          <div class="col-span-1 md:col-span-2 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Resources</h4>
+            <ul class="flex flex-col gap-3 text-xs sm:text-[13px] text-gray-400">
+              <li><a href="index.html#faq" class="hover:text-white transition-colors">FAQ</a></li>
+              <li><a href="index.html#privacy" class="hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a href="#" class="hover:text-white transition-colors">Changelog</a></li>
+            </ul>
+          </div>
+
+          <!-- Stay in orbit -->
+          <div class="col-span-2 md:col-span-4 flex flex-col gap-4">
+            <h4 class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Stay in orbit</h4>
+            <p class="text-xs sm:text-[13px] text-gray-400 leading-relaxed">Questions, feedback, or a browser port request? Write us — we read everything.</p>
+            <a href="mailto:orbitabsnoreply@gmail.com" class="group flex items-center justify-between bg-white/5 hover:bg-white/10 px-3 py-2.5 rounded-lg text-xs text-gray-300 transition-colors">
+              <span class="truncate">orbitabsnoreply@gmail.com</span>
+              <span class="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2">→</span>
+            </a>
+
+            <!-- Social icons -->
+            <div class="flex items-center gap-2 mt-1">
+              <a href="#" aria-label="X / Twitter" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="#" aria-label="GitHub" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              </a>
+              <a href="mailto:orbitabsnoreply@gmail.com" aria-label="Email" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all duration-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
+          <p class="text-[10px] sm:text-[11px] text-gray-600 text-center sm:text-left order-2 sm:order-1">© 2026 Orbitabs — built local-first. No analytics, no trackers, no accounts.</p>
+          <div class="flex items-center gap-5 order-1 sm:order-2">
+            <span class="hidden sm:inline text-[10px] text-gray-700 font-mono">v1.0.0</span>
+            <button id="back-to-top" class="group flex items-center gap-1.5 text-[10px] sm:text-[11px] text-gray-500 hover:text-white uppercase tracking-widest transition-colors py-2">
+              Back to top
+              <svg class="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m0 0l-6 6m6-6l6 6" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Giant faded wordmark (Now in Poiret One font) -->
+      <div class="relative w-full overflow-hidden pointer-events-none select-none" aria-hidden="true">
+        <h2 class="text-center font-normal tracking-tighter leading-[0.75] text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[13vw] xl:text-[12vw] whitespace-nowrap bg-gradient-to-b from-white/[0.09] via-white/[0.04] to-transparent bg-clip-text text-transparent" style="font-family: 'Poiret One', cursive;">
+          ORBITABS
+        </h2>
+      </div>
+    </footer>
+
+    <script>
+      function initPrivacy() {
+        var menuBtn = document.getElementById("menu-btn");
+        var mobileMenu = document.getElementById("mobile-menu");
+        var mobileLinks = document.querySelectorAll(".mobile-link");
+
+        function closeMobileMenu() {
+          if (mobileMenu) mobileMenu.classList.add("hidden-menu");
+          if (menuBtn) menuBtn.classList.remove("open");
+        }
+
+        if (menuBtn && mobileMenu) {
+          menuBtn.addEventListener("click", function () {
+            var isHidden = mobileMenu.classList.contains("hidden-menu");
+            if (isHidden) {
+              mobileMenu.classList.remove("hidden-menu");
+              menuBtn.classList.add("open");
+            } else {
+              closeMobileMenu();
+            }
+          });
+          mobileLinks.forEach(function (link) {
+            link.addEventListener("click", closeMobileMenu);
+          });
+          window.addEventListener("resize", function () {
+            if (window.innerWidth >= 768) closeMobileMenu();
+          });
+        }
+
+        // Back to top — placed before GSAP check so it works without GSAP too
+        var backToTop = document.getElementById("back-to-top");
+        if (backToTop) {
+          backToTop.addEventListener("click", function (e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        }
+
+        if (typeof gsap === "undefined") return;
+
+        try {
+          if (typeof ScrollTrigger !== "undefined") {
+            gsap.registerPlugin(ScrollTrigger);
+          }
+
+          gsap.from("nav", {
+            y: -50,
+            opacity: 0,
+            duration: 0.9,
+            ease: "power3.out",
+            clearProps: "all",
+          });
+          gsap.from("header h1", {
+            y: 30,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out",
+            clearProps: "all",
+            delay: 0.15,
+          });
+          gsap.from("header .glass", {
+            y: 20,
+            opacity: 0,
+            duration: 0.9,
+            ease: "power3.out",
+            clearProps: "all",
+            delay: 0.35,
+          });
+
+          if (typeof ScrollTrigger !== "undefined") {
+            document.querySelectorAll(".reveal").forEach(function (el) {
+              gsap.from(el, {
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 88%",
+                  toggleActions: "play none none reverse",
+                },
+                y: 40,
+                opacity: 0,
+                duration: 1,
+                ease: "power3.out",
+                clearProps: "all",
+              });
+            });
+          }
+        } catch (err) {
+          console.error("[Orbitabs] Animation error:", err);
+          document.querySelectorAll(".reveal").forEach(function (el) {
+            el.style.opacity = "1";
+            el.style.transform = "none";
+          });
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initPrivacy);
+      } else {
+        initPrivacy();
+      }
+    </script>
+  </body>
+</html>

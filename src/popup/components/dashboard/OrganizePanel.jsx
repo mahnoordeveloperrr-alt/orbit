@@ -298,12 +298,11 @@ export default function OrganizePanel() {
     return (
       <div
         {...dropHandlers(key, () => onDropOnGroup(group))}
-        className={`flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg border transition-colors ${isOver ? 'border-accent bg-accent/10' : 'border-transparent hover:border-borderLight/60'}`}
+        className={`flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg transition-colors ${isOver ? 'bg-accent/10' : ''} ${GROUP_DOT_COLORS[group.color] ? `inner-glow-${group.color}` : ''}`}
       >
         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${GROUP_DOT_COLORS[group.color] || 'bg-gray-400'}`} />
         {editing ? (
-          <>
-            <input
+          <>              <input
               autoFocus
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
@@ -312,9 +311,9 @@ export default function OrganizePanel() {
                 if (e.key === 'Escape') setEditingGroupId(null);
               }}
               placeholder="Group name"
-              className="flex-1 min-w-0 text-xs font-semibold text-textMain bg-primary border border-accent/40 rounded-md px-1.5 py-0.5 focus:outline-none focus:border-accent"
+              className="flex-1 min-w-0 text-xs font-semibold text-textMain bg-primary rounded-md px-1.5 py-0.5 focus:outline-none focus:border-accent"
             />
-            <button onClick={() => commitRename(group)} title="Save name" className="p-1 text-accent hover:text-textMain">
+            <button onClick={() => commitRename(group)} title="Save name" className="p-1 text-accentText hover:text-textMain">
               <Check size={12} />
             </button>
             <button onClick={() => setEditingGroupId(null)} title="Cancel" className="p-1 text-textMuted hover:text-red-500">
@@ -323,7 +322,7 @@ export default function OrganizePanel() {
           </>
         ) : (
           <span
-            className="text-xs font-semibold text-textMain truncate cursor-text hover:text-accent transition-colors"
+            className="text-xs font-semibold text-textMain truncate cursor-text hover:text-textMain transition-colors"
             onClick={() => startRename(group)}
             title="Click to rename"
           >
@@ -336,16 +335,15 @@ export default function OrganizePanel() {
           <button
             onClick={() => handleAddToGroup(win)}
             title={`Add ${selCount} selected tab${selCount > 1 ? 's' : ''} to this group`}
-            className="p-1 text-accent hover:text-textMain border border-accent/40 rounded-full transition-colors"
+            className="p-1 text-accentText hover:text-textMain border border-accent/40 rounded-full transition-colors"
           >
             <Plus size={12} />
           </button>
-        )}
-        {!editing && (
+        )}        {!editing && (
           <div className="ml-auto flex items-center gap-0.5 relative">
             <button
               onClick={() => setMenu(menuOpen ? null : `color:${group.id}`)}
-              className="p-1 text-textMuted hover:text-accent transition-colors"
+              className="p-1 text-textMuted hover:text-textMain transition-colors"
               title="Change color"
             >
               <Palette size={12} />
@@ -393,12 +391,14 @@ export default function OrganizePanel() {
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move'; if (dragOverKey !== tabKey) setDragOverKey(tabKey); }}
         onDragLeave={() => { if (dragOverKey === tabKey) setDragOverKey(null); }}
         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropOnTab(t, win); }}
-        className={`flex items-center gap-2 py-1.5 pr-2 rounded-lg border text-xs cursor-grab active:cursor-grabbing transition-colors ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'border-accent bg-accent/10 ring-1 ring-accent/40' : isOverTab ? 'border-accent bg-accent/10' : 'border-borderLight/50 bg-primary/70 hover:border-accent/40'}`}
+        // Tab row: centered, slightly smaller so the grip + dot + title
+        // sit in one tidy band (user spec: real order, centered & compact).
+        className={`tab-row flex items-center justify-center gap-1.5 px-1.5 py-1.5 rounded-lg text-[11px] cursor-grab active:cursor-grabbing transition-colors ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'bg-accent/10' : isOverTab ? 'bg-accent/10' : 'bg-[#121214] hover:bg-[#161618]'} inner-glow-tab-row`}
         title={`${t.title}\n${t.url}\n\nClick = select · Ctrl/Cmd+click = toggle · Shift+click = range\nDrop a tab here to reorder (lands above this tab)`}
       >
         <GripVertical size={12} className="text-textMuted/50 flex-shrink-0" />
         {group && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${GROUP_DOT_COLORS[group.color] || 'bg-gray-400'}`} />}
-        <span className="truncate flex-1">{t.title}</span>
+        <span className="truncate flex-1 text-textMain">{t.title}</span>
         {t.pinned && <span className="text-[9px] text-textMuted flex-shrink-0">📌</span>}
       </div>
     );
@@ -406,16 +406,16 @@ export default function OrganizePanel() {
 
   return (
     <div className="space-y-4 relative z-10">
-      <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-textMuted">
-          Real tab order · drop on a tab to reorder, on a group header to add,
-          on the strip to ungroup. Nothing is grouped automatically.
+      <div className="flex items-center justify-center gap-1.5 px-1">
+        <p className="text-xs text-textMuted text-center max-w-[340px]">
+          Real tab order · drop on a tab to reorder, a header to group,
+          a strip to ungroup. Nothing is grouped automatically.
         </p>
         <div className="flex items-center gap-1.5">
           <button
             onClick={refresh}
             title="Refresh live state"
-            className="text-textMuted hover:text-accent transition-colors p-1"
+            className="text-textMuted hover:text-textMain transition-colors p-1"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -423,7 +423,7 @@ export default function OrganizePanel() {
       </div>
 
       {dragTab && dragTab.tabIds?.length > 1 && (
-        <div className="surface rounded-lg px-3 py-1.5 text-[11px] font-semibold text-accent flex items-center gap-2 relative z-20">
+        <div className="surface rounded-lg px-3 py-1.5 text-[11px] font-semibold text-accentText flex items-center gap-2 relative z-20">
           <GripVertical size={12} /> Moving {dragTab.tabIds.length} tabs — drop on a group header / tab / strip
         </div>
       )}
@@ -432,7 +432,7 @@ export default function OrganizePanel() {
           Sticky so it stays reachable while scrolling long window lists. */}
       {selectedIds.size > 0 && (
         <div className="surface sticky top-0 z-30 rounded-xl p-2 flex items-center gap-1.5 flex-wrap shadow-md">
-          <span className="text-[11px] font-bold text-accent bg-accent/10 border border-accent/20 px-2 py-1 rounded-full flex-shrink-0">
+          <span className="text-[11px] font-bold text-accentText bg-accent/10 border border-accent/20 px-2 py-1 rounded-full flex-shrink-0">
             {selectedIds.size} selected
           </span>
 
@@ -480,8 +480,8 @@ export default function OrganizePanel() {
                           <span className="truncate flex-1">{g.title || 'Untitled'}</span>
                           <span className="text-[9px] text-textMuted flex-shrink-0">{size}</span>
                           {allIn
-                            ? <Check size={11} className="text-accent flex-shrink-0" />
-                            : <Plus size={11} className="text-accent flex-shrink-0" />}
+                            ? <Check size={11} className="text-accentText flex-shrink-0" />
+                            : <Plus size={11} className="text-accentText flex-shrink-0" />}
                         </button>
                       );
                     })
@@ -532,14 +532,17 @@ export default function OrganizePanel() {
           const stripOver = dragOverKey === stripKey;
 
           return (
-            <div key={win.id} className={`surface box-${boxColorFor(winIndex)} rounded-xl p-3`}>
+            <div key={win.id} className={`surface box-${boxColorFor(winIndex)} rounded-xl p-3 inner-glow-window`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-textMain">
-                  Window {win.id} {win.focused && <span className="text-accent text-[10px] ml-1">● current</span>}
+                  Window {winIndex + 1} {win.focused && <span className="text-accentText text-[10px] ml-1">● current</span>}
                 </span>
+                {/* White label on the dark interior; `.new-group-btn` flips it
+                    to dark ink in light mode (the web-pass card is white in
+                    light) while dark mode keeps white. */}
                 <button
                   onClick={() => handleCreateGroup(win)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-textMain transition-colors"
+                  className="new-group-btn flex items-center gap-1 text-[11px] font-medium text-white hover:text-white transition-colors"
                 >
                   <Plus size={12} /> New group
                 </button>
@@ -549,9 +552,9 @@ export default function OrganizePanel() {
                 {items.map(item => {
                   if (item.type === 'header') return <div key={item.key}>{groupHeader(item.win, item.group, item.count)}</div>;
                   if (item.type === 'divider') return (
-                    <div key={item.key} className="flex items-center gap-2 px-2 py-1" title="Pinned / normal boundary — Chrome keeps these blocks separate">
-                      <div className="flex-1 border-t border-dashed border-borderLight" />
-                      <span className="text-[9px] uppercase tracking-wide text-textMuted/70">pinned ↑</span>
+                    <div key={item.key} className="flex items-center justify-center gap-1 px-1 py-1" title="Pinned / normal boundary — Chrome keeps these blocks separate">
+                      <div className="flex-1" />
+                      <span className="text-[8px] uppercase tracking-wide text-textMuted/70">pinned ↑</span>
                     </div>
                   );
                   return tabRow(item.tab, item.win, item.inGroup);
@@ -561,7 +564,7 @@ export default function OrganizePanel() {
               {/* Ungroup strip — the drop target for removing tabs from groups */}
               <div
                 {...dropHandlers(stripKey, () => onDropOnUngrouped(win))}
-                className={`mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed py-1.5 transition-colors ${stripOver ? 'border-accent bg-accent/10' : 'border-borderLight/70'}`}
+                className={`ungroup-strip mt-2 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition-colors inner-glow-tab-row ${stripOver ? 'bg-accent/10' : 'bg-[#121214]'}`}
               >
                 <UngroupIcon size={11} className="text-textMuted" />
                 <span className="text-[10px] font-medium text-textMuted uppercase tracking-wide">
