@@ -20,10 +20,15 @@
 
 | Asset | Status |
 |---|---|
-| `ui/store-screenshot-1280x800.png` | ✅ generated (store-compliant size, real popup + feature list) |
-| Additional 4–6 screenshots (recommended) | ⬜ shot-list below |
+| `store-assets/01-dashboard-1280x800.png` | ✅ real Chrome, 1280×800 |
+| `store-assets/02-crash-recovery-1280x800.png` | ✅ |
+| `store-assets/03-organizer-1280x800.png` | ✅ |
+| `store-assets/04-settings-1280x800.png` | ✅ |
+| `store-assets/promotional-tile-440x280.png` | ✅ small promo tile (440×280 exact) |
 
-Store accepts **1280×800 or 640×400** exactly; at least one is required — one is ready.
+Store accepts **1280×800 or 640×400** exactly; 1–5 allowed, so upload these four in this order. Regenerate all of them with `node scripts/make-store-screenshots.mjs`.
+
+A markup-overlay shot was attempted and dropped: the overlay dims the page, so the annotations read poorly at listing size. Skip shot 5 below unless it is re-shot by hand.
 
 ### Screenshot shot-list (capture in order, 1280×800, light theme, real data)
 
@@ -141,8 +146,8 @@ Requires Chrome 116 or newer. Shortcuts are remappable at chrome://extensions/sh
 ## 8. Submission runbook (Dashboard, in order)
 
 1. **Register:** https://chrome.google.com/webstore/devconsole → pay **$5 one-time** developer registration fee.
-2. **New item** → upload `orbitabs-1.5.0-store.zip` (repo root).
-3. **Listing tab** — paste from §5: name, summary, description; upload `ui/store-screenshot-1280x800.png` (+ more from §2 when available).
+2. **New item** → upload `releases/orbitabs-1.5.0-store.zip` (16 files, `manifest.json` at the zip root — rebuild with `node scripts/pack-store-release.mjs`).
+3. **Listing tab** — paste from §5: name, summary, description; upload the four `store-assets/*-1280x800.png` shots (§2) and the 440×280 tile.
 4. **Privacy tab** —
    - Privacy policy URL: `https://site-0f71d0986fe640a0b93af1d196f6b56b.freebuff.page/privacy.html` (only after the `site/` redeploy verifies 200)
    - Single purpose: session save/restore statement (§5).
